@@ -1,0 +1,105 @@
+﻿<UserControl x:Class="GitSquash.VisualStudio.Extension.View.SquashView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:teamExplorer="clr-namespace:Microsoft.TeamFoundation.Controls.WPF.TeamExplorer;assembly=Microsoft.TeamFoundation.Controls"
+             xmlns:wpf="clr-namespace:Microsoft.TeamFoundation.Controls.WPF;assembly=Microsoft.TeamFoundation.Controls"
+             xmlns:framework="clr-namespace:Microsoft.TeamFoundation.Controls.WPF.TeamExplorer.Framework;assembly=Microsoft.TeamFoundation.Controls"
+             xmlns:converters="clr-namespace:GitSquash.VisualStudio.Extension.Converters"
+             xmlns:converters1="clr-namespace:Microsoft.TeamFoundation.Controls.WPF.Converters;assembly=Microsoft.TeamFoundation.Controls"
+             mc:Ignorable="d" 
+             x:Name="UserControl"
+             d:DesignHeight="300" d:DesignWidth="300">
+    <UserControl.Resources>
+        <ResourceDictionary >
+            <ResourceDictionary.MergedDictionaries>
+                <wpf:TFCachedResourceDictionary Source="pack://application:,,,/Microsoft.TeamFoundation.Controls;component/WPF/SharedResources.xaml" />
+                <wpf:TFCachedResourceDictionary Source="pack://application:,,,/Microsoft.TeamFoundation.Git.Controls;component/GitSharedResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid DataContext="{Binding ElementName=UserControl, Path=ViewModel}">
+        <Grid.Resources>
+            <converters1:TrueToVisibleConverter x:Key="TrueToVisibleConverter" />
+            <converters:FalseToVisibilityConverter x:Key="FalseToVisibleConverter" />
+            <converters1:AnyTrueToVisibleConverter x:Key="AnyTrueToVisibleConverter"/>
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <WrapPanel Margin="0"  Orientation="Horizontal" VerticalAlignment="Center">
+                <teamExplorer:TextLink Text="Squash" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding Squash}" />
+                <Separator Style="{StaticResource VerticalSeparator}" />
+                <teamExplorer:TextLink Text="Rebase Only" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding Rebase}" />
+            </WrapPanel>
+            <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                <WrapPanel.Visibility>
+                    <MultiBinding Converter="{StaticResource AnyTrueToVisibleConverter}">
+                        <Binding Path="IsDirty" />
+                    </MultiBinding>
+                </WrapPanel.Visibility>
+                <Rectangle Margin="2,0,4,2" Width="14" Height="14" Fill="{StaticResource WarningIconBrush}" Visibility="{Binding Path=IsDirty, Converter={StaticResource TrueToVisibleConverter}, ConverterParameter=Hidden}" />
+                <teamExplorer:TextLink  Margin="0,0,0,0" Text="Pending changes in staging area. Please Resolve." Command="{Binding Path=ViewChangesPage}" Visibility="{Binding Path=IsDirty, Converter={StaticResource TrueToVisibleConverter}}" />
+            </WrapPanel>
+            <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                <WrapPanel.Visibility>
+                    <MultiBinding Converter="{StaticResource AnyTrueToVisibleConverter}">
+                        <Binding Path="IsConflicts" />
+                        <Binding Path="IsRebaseInProgress" />
+                    </MultiBinding>
+                </WrapPanel.Visibility>
+                <Rectangle Margin="2,0,4,2" Width="14" Height="14" Fill="{StaticResource WarningIconBrush}" Visibility="{Binding Path=IsConflicts, Converter={StaticResource TrueToVisibleConverter}, ConverterParameter=Hidden}" />
+                <teamExplorer:TextLink Margin="0,0,0,0" Text="Conflicts Found" Command="{Binding Path=ViewConflictsPage}" Visibility="{Binding Path=IsConflicts, Converter={StaticResource TrueToVisibleConverter}}" />
+                <Separator Style="{StaticResource VerticalSeparator}" Visibility="{Binding Path=IsRebaseInProgress, Converter={StaticResource TrueToVisibleConverter}}" />
+                <teamExplorer:TextLink Margin="0,0,6,0" Text="Continue" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding Path=ContinueRebase}" Visibility="{Binding Path=IsRebaseInProgress, Converter={StaticResource TrueToVisibleConverter}}" />
+                <teamExplorer:TextLink Margin="0,0,6,0" Text="Abort" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding Path=AbortRebase}" Visibility="{Binding Path=IsRebaseInProgress, Converter={StaticResource TrueToVisibleConverter}}" />
+            </WrapPanel>
+            <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch" Visibility="{Binding OperationSuccess, Converter={StaticResource FalseToVisibleConverter}, FallbackValue=Visibility.Collapsed}">
+                <Rectangle Margin="2,0,4,2" Width="14" Height="14" Fill="{StaticResource WarningIconBrush}" />
+                <wpf:TextBlockControl Text="{Binding GitCommandResponse.CommandOutput}" Margin="2,0,4,2"  />
+            </WrapPanel>
+            <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch" Visibility="{Binding OperationSuccess, Converter={StaticResource TrueToVisibleConverter}, FallbackValue=Visibility.Collapsed}">
+                <Rectangle Margin="2,0,4,2" Width="14" Height="14" Fill="{StaticResource InformationIconBrush}" />
+                <wpf:TextBlockControl Text="{Binding GitCommandResponse.CommandOutput}" Margin="2,0,4,2"  />
+            </WrapPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <wpf:TextBlockControl Text="Branch:" Margin="6,6,3,0"  />
+                <teamExplorer:TextLink Text="{Binding CurrentBranch.FriendlyName}"  Margin="3,6,3,0" Command="{Binding ChangeBranch}" />
+            </StackPanel>
+            <framework:SectionControl HeaderText="Parent Commit" IsExpanded="True" Margin="0,6,0,0" IsBusy="{Binding IsBusy}" ShowProgressWhenBusy="True"  >
+                <framework:SectionControl.Content>
+                    <DataGrid IsReadOnly="True" SelectionMode="Single" SelectedValue="{Binding SelectedCommit}"  ItemsSource="{Binding BranchCommits}" AutoGenerateColumns="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn MaxWidth="50" Binding="{Binding Sha, Converter={converters:PrefixValueConverter PrefixLength=6}}" Header="ID"/>
+                            <DataGridTextColumn Binding="{Binding MessageShort}" MaxWidth="250" Header="Message" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </framework:SectionControl.Content>
+            </framework:SectionControl>
+            <framework:SectionControl HeaderText="New Commit Message" IsExpanded="True" Margin="0,6,0,0" IsBusy="{Binding IsBusy}" ShowProgressWhenBusy="True" >
+                <framework:SectionControl.Content>
+                    <wpf:LabeledTextBox Row="2" Text="{Binding Path=CommitMessage, Mode=TwoWay, Delay=250}" HintText="Commit message to be used" IsReadOnly="false" IsEnabled="true" IsRequired="true" />
+                </framework:SectionControl.Content>
+            </framework:SectionControl>
+            <framework:SectionControl HeaderText="Rebase Branch Onto" IsExpanded="True" Margin="0,6,0,0" IsBusy="{Binding IsBusy}" ShowProgressWhenBusy="True" >
+                <framework:SectionControl.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding Mode=TwoWay, Path=ApplyRebase}" Background="Transparent" Content="Rebase on Squash" Margin="6,6,3,0" />
+                        <ComboBox ItemsSource="{Binding Branches}" DisplayMemberPath="FriendlyName"  Margin="3,6,3,0" SelectedValue="{Binding SelectedRebaseBranch}" Width="150" Style="{StaticResource PlainComboBox}"/>
+                    </StackPanel>
+                </framework:SectionControl.Content>
+            </framework:SectionControl>
+
+            <framework:SectionControl HeaderText="Push" IsExpanded="True" Margin="0,6,0,0" IsBusy="{Binding IsBusy}" ShowProgressWhenBusy="True" >
+                <framework:SectionControl.Content>
+                    <CheckBox IsChecked="{Binding Mode=TwoWay, Path=ForcePush}" Background="Transparent" Content="Perform Push (forced)" Margin="6,6,3,0" />
+                </framework:SectionControl.Content>
+            </framework:SectionControl>
+        </StackPanel>
+    </Grid>
+</UserControl>
+
