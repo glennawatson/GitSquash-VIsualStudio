@@ -1,13 +1,28 @@
 ﻿namespace GitRebase.VisualStudio
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
-    public class GitSquashWrapper
+    using Microsoft.TeamFoundation.Git.Controls.Extensibility;
+
+    using PropertyChanged;
+
+    [ImplementPropertyChanged]
+    public class GitSquashWrapper : IGitSquashWrapper
     {
-        
+        public IHistoryCommitItem ParentItem { get; set; }
+
+        public void Squash()
+        {
+        }
+
+        public void Abort()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Continue()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -6,9 +6,13 @@
     using System.Text;
     using System.Threading.Tasks;
 
+    using Microsoft.TeamFoundation.Git.Controls.Extensibility;
+
     public interface IGitSquashWrapper
     {
-        string CurrentBranch { get; }
+        IHistoryCommitItem ParentItem { get; }
+
+        void Squash(); 
 
         void Abort();
 
