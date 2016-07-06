@@ -1,6 +1,10 @@
 ﻿//------------------------------------------------------------------------------
-// <copyright file="GitRebasePackage.cs" company="Company">
-//     Copyright (c) Company.  All rights reserved.
+// <copyright file="GitRebasePackage.cs" company="Glenn Watson">
+//     Copyright (c) Glenn Watson.  All rights reserved.
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // </copyright>
 //------------------------------------------------------------------------------
 namespace GitRebase.VisualStudio.Extension
@@ -38,8 +42,7 @@ namespace GitRebase.VisualStudio.Extension
     [PackageRegistration(UseManagedResourcesOnly = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
     [Guid(PackageGuidString)]
-    [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", 
-        Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
+    [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     [ProvideService(typeof(IGitSquashWrapper))]
     public sealed class GitSquashPackage : Package
     {
@@ -51,7 +54,9 @@ namespace GitRebase.VisualStudio.Extension
         /// <summary>
         /// A guid to reference the rebase page.
         /// </summary>
-        public const string RebasePageGuidString = "87C014D4-0102-43FA-B3AC-25B7033A13D5";
+        public const string SquashPageGuidString = "87C014D4-0102-43FA-B3AC-25B7033A13D5";
+
+        public const string SquashNavigationItemGuidString = "168177EF-3080-4640-9631-3363E5974E1A";
 
         private IHistoryExt2 gitHistory;
 
@@ -84,12 +89,12 @@ namespace GitRebase.VisualStudio.Extension
                     return this.squashWrapper;
                 }
 
-                IVsOutputWindowPane outputWindow;
                 var outWindow = GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
                 var customGuid = new Guid("27AF351D-6A16-47E5-8D9D-0EF16C348395");
                 if (outWindow != null)
                 {
                     outWindow.CreatePane(ref customGuid, "Git Commit Squash", 1, 1);
+                    IVsOutputWindowPane outputWindow;
                     outWindow.GetPane(ref customGuid, out outputWindow);
                 }
 

@@ -11,10 +11,13 @@ namespace GitRebase.VisualStudio
 
     /// <summary>
     /// Helper class for finding details about the git installation.
-    /// 
     /// </summary>
     public class GitHelper
     {
+        /// <summary>
+        /// Gets the binary path to the GIT executable.
+        /// </summary>
+        /// <returns>The path to the GIT executable.</returns>
         public static string GetGitBinPath()
         {
             string installationPath = GetGitInstallationPath();
@@ -27,6 +30,10 @@ namespace GitRebase.VisualStudio
             return Directory.Exists(binPath) ? binPath : Path.Combine(installationPath, "bin");
         }
 
+        /// <summary>
+        /// Gets the path to the installation path.
+        /// </summary>
+        /// <returns>The installation path.</returns>
         public static string GetGitInstallationPath()
         {
             string gitPath = GetInstallPathFromEnvironmentVariable();
@@ -45,6 +52,10 @@ namespace GitRebase.VisualStudio
             return gitPath;
         }
 
+        /// <summary>
+        /// Attempt to get the installation path from the path variable.
+        /// </summary>
+        /// <returns>The installation path or null if unable to be found.</returns>
         public static string GetInstallPathFromEnvironmentVariable()
         {
             string path = Environment.GetEnvironmentVariable("PATH");
@@ -65,6 +76,10 @@ namespace GitRebase.VisualStudio
             return gitPath;
         }
 
+        /// <summary>
+        /// Attempt to get the installation path from the registry.
+        /// </summary>
+        /// <returns>The installation path or null if unable to be found.</returns>
         public static string GetInstallPathFromRegistry()
         {
             // Check reg key for msysGit 2.6.1+
@@ -95,6 +110,10 @@ namespace GitRebase.VisualStudio
             return null;
         }
 
+        /// <summary>
+        /// Attempts to get the installation path searching the program files directory.
+        /// </summary>
+        /// <returns>The installation path or null if unable to be found.</returns>
         public static string GetInstallPathFromProgramFiles()
         {
             // If this is a 64bit OS, and the user installed 64bit git, then explictly search that folder.
@@ -114,12 +133,7 @@ namespace GitRebase.VisualStudio
 
             // Else, this is a 64bit or a 32bit machine, and the user installed 32bit git
             string gitPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "git");
-            if (Directory.Exists(gitPath))
-            {
-                return gitPath.TrimEnd('\\');
-            }
-
-            return null;
+            return Directory.Exists(gitPath) ? gitPath.TrimEnd('\\') : null;
         }
     }
 }
