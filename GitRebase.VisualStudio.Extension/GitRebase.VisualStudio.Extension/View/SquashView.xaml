@@ -4,7 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:GitRebase.VisualStudio.Extension.View"
-             xmlns:teamExplorer="clr-namespace:Microsoft.TeamFoundation.Controls.WPF.TeamExplorer;assembly=Microsoft.TeamFoundation.Controls"             
+             xmlns:teamExplorer="clr-namespace:Microsoft.TeamFoundation.Controls.WPF.TeamExplorer;assembly=Microsoft.TeamFoundation.Controls"
+             xmlns:wpf="clr-namespace:Microsoft.TeamFoundation.Controls.WPF;assembly=Microsoft.TeamFoundation.Controls"
              mc:Ignorable="d" 
              x:Name="UserControl"
              d:DesignHeight="300" d:DesignWidth="300">
@@ -13,9 +14,17 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <UniformGrid Columns="2">
-            <TextBlock Text="Branch Parent From: " HorizontalAlignment="Right" ></TextBlock>
-            <ComboBox Grid.Column="1" VerticalAlignment="Top"  ItemsSource="{Binding BranchNames}" DisplayMemberPath="FriendlyName" Margin="6,0,0,0" Width="150"/>
-        </UniformGrid>
+        <StackPanel>
+            <UniformGrid Columns="2">
+                <wpf:TextBlockControl Text="Current Branch:"></wpf:TextBlockControl>
+                <teamExplorer:TextLink Text="{Binding CurrentBranch.FriendlyName}" Command="{Binding ChangeBranch}" />
+                <wpf:TextBlockControl Text="Branch Parent From: " HorizontalAlignment="Right" ></wpf:TextBlockControl>
+                <ComboBox Grid.Column="1" VerticalAlignment="Top"  ItemsSource="{Binding BranchNames}" DisplayMemberPath="FriendlyName" Margin="6,0,0,0" Width="150"/>
+            </UniformGrid>
+            <GroupBox Header="New Commit Message">
+                <TextBox/>
+            </GroupBox>
+        </StackPanel>
     </Grid>
 </UserControl>
+

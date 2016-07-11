@@ -22,8 +22,13 @@
         IGitSquashWrapper SquashWrapper { get; set;  }
 
         /// <summary>
-        /// Gets a collection of branch names.
+        /// Gets the current branch.
         /// </summary>
-        IEnumerable<Branch> BranchNames { get; }
+        Branch CurrentBranch { get; }
+
+        /// <summary>
+        /// Gets a command which will change the current branch.
+        /// </summary>
+        ICommand ChangeBranch { get; }
     }
 }

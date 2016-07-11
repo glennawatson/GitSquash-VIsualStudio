@@ -22,7 +22,7 @@ namespace GitRebase.VisualStudio
         /// <summary>
         /// Performs the squash action.
         /// </summary>
-        void Squash(); 
+        void Squash();
 
         /// <summary>
         /// Aborts a attempt to squash/rebase.
@@ -39,5 +39,18 @@ namespace GitRebase.VisualStudio
         /// </summary>
         /// <returns>The remote branches.</returns>
         IEnumerable<Branch> GetRemoteBranches();
+
+        /// <summary>
+        /// Gets the commit message since the parent branch.
+        /// </summary>
+        /// <param name="startCommit">The start commit.</param>
+        /// <returns>All the commit messages</returns>
+        string GetCommitMessages(Commit startCommit);
+
+        /// <summary>
+        /// Gets the current branch of the repository.
+        /// </summary>
+        /// <returns>The current branch.</returns>
+        Branch GetCurrentBranch();
     }
 }

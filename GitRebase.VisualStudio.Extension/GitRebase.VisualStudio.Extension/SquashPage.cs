@@ -4,20 +4,19 @@
     using System.ComponentModel.Composition;
     using System.IO;
     using System.Linq;
-    using System.Reflection;
     using System.Windows;
     using System.Windows.Threading;
 
-    using GitRebase.VisualStudio.Extension.View;
-    using GitRebase.VisualStudio.Extension.ViewModel;
+    using GalaSoft.MvvmLight.Command;
 
     using Microsoft.TeamFoundation.Controls;
-    using Microsoft.TeamFoundation.Git.Controls.Extensibility;
-    using Microsoft.TeamFoundation.MVVM;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.TeamFoundation.Git.Extensibility;
 
     using TeamExplorer.Common;
+
+    using View;
+    using ViewModel;
 
     /// <summary>
     /// Represents a page in the team explorer
@@ -26,14 +25,10 @@
     [TeamExplorerPage(GitSquashPackage.SquashPageGuidString, Undockable = true)]
     public class SquashPage : TeamExplorerBasePage 
     {
-        private ITeamExplorer teamExplorer;
+        private readonly ITeamExplorer teamExplorer;
+        private readonly IGitExt gitService;
 
-        private IGitExt gitExt;
-
-        private IGitSquashWrapper squashWrapper;
-
-        private dynamic uiService;
-
+        private SquashView view;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SquashPage"/> class.
@@ -43,7 +38,9 @@
         public SquashPage([Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider)
         {
             this.teamExplorer = (ITeamExplorer)serviceProvider.GetService(typeof(ITeamExplorer));
-            this.gitExt = (IGitExt)serviceProvider.GetService(typeof(IGitExt));
+
+            this.gitService = (IGitExt)serviceProvider.GetService(typeof(IGitExt));
+            this.gitService.PropertyChanged += (sender, e) => this.Refresh();
         }
 
         /// <summary>
@@ -55,18 +52,7 @@
         {
             Application.Current.Dispatcher.BeginInvoke(
                 DispatcherPriority.Background,
-                new Action(() => teamExplorer.NavigateToPage(new Guid(pageGuid), null)));
-        }
-
-        /// <inheritdoc />
-        public override object GetExtensibilityService(Type serviceType)
-        {
-            if (serviceType == typeof(IGitSquashWrapper))
-            {
-                return this.squashWrapper;
-            }
-
-            return base.GetExtensibilityService(serviceType);
+                new Action(() => this.teamExplorer.NavigateToPage(new Guid(pageGuid), null)));
         }
 
         /// <inheritdoc />
@@ -76,17 +62,29 @@
 
             this.Title = "Squash";
 
-            this.squashWrapper = this.GetService<IGitSquashWrapper>();
-
-            this.PageContent = new SquashView
-                                 {
-                                     ViewModel = new SquashViewModel(this.squashWrapper)
-                                 };
-
             if (this.AreGitToolsInstalled() == false)
             {
                 this.ShowPage(TeamExplorerPageIds.GitInstallThirdPartyTools);
+                return;
             }
+
+            this.view = new SquashView();
+
+            this.PageContent = this.view;
+
+            this.Refresh();
+        }
+
+        /// <inheritdoc />
+        public override void Refresh()
+        {
+            var showBranches = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitBranches));
+            this.view.ViewModel = new SquashViewModel(new GitSquashWrapper(this.GetRepositoryDirectory()), showBranches);
+        }
+
+        private string GetRepositoryDirectory()
+        {
+            return this.gitService.ActiveRepositories.FirstOrDefault()?.RepositoryPath;
         }
 
         private bool AreGitToolsInstalled()

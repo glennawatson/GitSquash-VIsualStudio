@@ -49,6 +49,23 @@
         }
 
         /// <inheritdoc />
+        public string GetCommitMessages(Commit startCommit)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var commit in this.GetCurrentBranch().Commits.SkipWhile(x => x.Sha != startCommit.Sha))
+            {
+                sb.AppendLine(commit.Message);
+            }
+
+            return sb.ToString();
+        }
+
+        public Branch GetCurrentBranch()
+        {
+            return this.repository.Head;
+        }
+
+        /// <inheritdoc />
         public void Squash()
         {
             if (string.IsNullOrWhiteSpace(this.ParentBranch))

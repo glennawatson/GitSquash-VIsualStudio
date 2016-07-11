@@ -85,44 +85,44 @@ namespace GitRebase.VisualStudio.Extension
 
         private object CreateGitWrapperService(IServiceContainer container, Type serviceType)
         {
-            if (typeof(IGitSquashWrapper) == serviceType)
+            if (typeof(IGitSquashWrapper) != serviceType)
             {
-                if (this.squashWrapper != null)
+                return null;
+            }
+
+            if (this.squashWrapper != null)
+            {
+                return this.squashWrapper;
+            }
+
+            var outWindow = GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
+            var customGuid = new Guid("27AF351D-6A16-47E5-8D9D-0EF16C348395");
+            if (outWindow != null)
+            {
+                outWindow.CreatePane(ref customGuid, "Git Commit Squash", 1, 1);
+                IVsOutputWindowPane outputWindow;
+                outWindow.GetPane(ref customGuid, out outputWindow);
+            }
+
+            if (this.gitService.ActiveRepositories.FirstOrDefault() != null)
+            {
+                IGitRepositoryInfo gitRepositoryInfo = this.gitService.ActiveRepositories.FirstOrDefault();
+                if (gitRepositoryInfo == null)
                 {
                     return this.squashWrapper;
                 }
 
-                var outWindow = GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
-                var customGuid = new Guid("27AF351D-6A16-47E5-8D9D-0EF16C348395");
-                if (outWindow != null)
-                {
-                    outWindow.CreatePane(ref customGuid, "Git Commit Squash", 1, 1);
-                    IVsOutputWindowPane outputWindow;
-                    outWindow.GetPane(ref customGuid, out outputWindow);
-                }
-
-                if (this.gitService.ActiveRepositories.FirstOrDefault() != null)
-                {
-                    IGitRepositoryInfo gitRepositoryInfo = this.gitService.ActiveRepositories.FirstOrDefault();
-                    if (gitRepositoryInfo == null)
-                    {
-                        return this.squashWrapper;
-                    }
-
-                    string path = gitRepositoryInfo.RepositoryPath;
-                    this.TraceWriteLine("Creating Wrapper service with path: " + path);
-                    this.squashWrapper = new GitSquashWrapper(this.gitService.ActiveRepositories.First().RepositoryPath);
-                }
-                else
-                {
-                    this.TraceWriteLine("Creating Wrapper service.");
-                    this.squashWrapper = null;
-                }
-
-                return this.squashWrapper;
+                string path = gitRepositoryInfo.RepositoryPath;
+                this.TraceWriteLine("Creating Wrapper service with path: " + path);
+                this.squashWrapper = new GitSquashWrapper(this.gitService.ActiveRepositories.First().RepositoryPath);
+            }
+            else
+            {
+                this.TraceWriteLine("Creating Wrapper service.");
+                this.squashWrapper = null;
             }
 
-            return null;
+            return this.squashWrapper;
         }
 
         private void TraceWriteLine(string msg)

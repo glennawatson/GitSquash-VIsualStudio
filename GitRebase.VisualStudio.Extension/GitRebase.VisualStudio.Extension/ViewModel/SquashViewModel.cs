@@ -18,13 +18,15 @@
         /// Initializes a new instance of the <see cref="SquashViewModel"/> class.
         /// </summary>
         /// <param name="squashWrapper">Our model that we retrieve data from.</param>
-        public SquashViewModel(IGitSquashWrapper squashWrapper)
+        /// <param name="changeBranch">A command to change the current branch.</param>
+        public SquashViewModel(IGitSquashWrapper squashWrapper, ICommand changeBranch)
         {
             this.SquashWrapper = squashWrapper;
 
-            this.BranchNames = this.SquashWrapper.GetRemoteBranches().ToList();
-
             this.PerformSquash = new RelayCommand(() => this.SquashWrapper.Squash(), () => this.SquashWrapper != null);
+            this.ChangeBranch = changeBranch;
+
+
         }
 
         /// <inheritdoc />
@@ -36,6 +38,10 @@
         /// <inheritdoc />
         public IGitSquashWrapper SquashWrapper { get; set; }
 
-        public IEnumerable<Branch> BranchNames { get; }
+        /// <inheritdoc />
+        public Branch CurrentBranch { get; }
+
+        /// <inheritdoc />
+        public ICommand ChangeBranch { get; }
     }
 }
