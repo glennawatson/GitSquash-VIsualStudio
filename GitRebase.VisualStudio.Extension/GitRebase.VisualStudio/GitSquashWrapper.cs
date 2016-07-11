@@ -120,7 +120,7 @@
 
             return this.RunGitFlow(
                 $"rebase -i {parentBranch.FriendlyName}",
-                new Dictionary<string, string> { { "GIT_SEQUENCE_EDITOR ", rewriterName } });
+                new Dictionary<string, string> { { "GIT_SEQUENCE_EDITOR", rewriterName } });
         }
 
         /// <inheritdoc />
