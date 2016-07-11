@@ -27,8 +27,8 @@
     <ProjectGuid>{D939BB9A-A531-42E3-AFED-081A2C296201}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>GitRebase.VisualStudio.Extension</RootNamespace>
-    <AssemblyName>GitRebase.VisualStudio.Extension</AssemblyName>
+    <RootNamespace>GitSquash.VisualStudio.Extension</RootNamespace>
+    <AssemblyName>GitSquash.VisualStudio.Extension</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
@@ -47,7 +47,8 @@
     <WarningLevel>4</WarningLevel>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <CodeAnalysisRuleSet>..\gitsquashruleset.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>bin\Debug\GitRebase.VisualStudio.Extension.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\GitSquash.VisualStudio.Extension.xml</DocumentationFile>
+    <CopyVsixExtensionFiles>False</CopyVsixExtensionFiles>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -56,13 +57,16 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\GitRebase.VisualStudio.Extension.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\GitSquash.VisualStudio.Extension.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Converters\AllTrueToVisibleConverter.cs" />
+    <Compile Include="Converters\AnyTrueVisibilityConverter.cs" />
+    <Compile Include="Converters\FalseToVisibilityConverter.cs" />
     <Compile Include="Converters\PrefixValueConverter.cs" />
     <Compile Include="GitSquashPackage.cs" />
     <Compile Include="Logger.cs" />
-    <Compile Include="Properties\Annotations.cs" />
+    <Compile Include="OutputWindowLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -80,6 +84,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />
+    <Content Include="License.rtf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="packages.config" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
@@ -88,7 +96,10 @@
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
     <Content Include="index.html" />
-    <None Include="Resources\compress.ico" />
+    <Content Include="Resources\compress.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="Resources\SquashIcon.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -265,6 +276,10 @@
     <ProjectReference Include="..\..\TeamExplorer.Common\TeamExplorer.Common.csproj">
       <Project>{388ac013-c628-4a32-abbc-a28a68c3a112}</Project>
       <Name>TeamExplorer.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CommentWriter\CommentWriter.csproj">
+      <Project>{8a822509-6b1d-4d04-b9e6-a5f80d8ffb8c}</Project>
+      <Name>CommentWriter</Name>
     </ProjectReference>
     <ProjectReference Include="..\GitRebase.VisualStudio\GitSquash.VisualStudio.csproj">
       <Project>{d6ee82cd-f83f-46d5-9a69-5941c519be93}</Project>

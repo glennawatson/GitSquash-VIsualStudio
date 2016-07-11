@@ -1,4 +1,4 @@
-﻿namespace GitRebase.VisualStudio.Extension
+﻿namespace GitSquash.VisualStudio.Extension
 {
     using System;
     using System.ComponentModel.Composition;
@@ -9,14 +9,14 @@
 
     using GalaSoft.MvvmLight.Command;
 
+    using GitSquash.VisualStudio.Extension.View;
+    using GitSquash.VisualStudio.Extension.ViewModel;
+
     using Microsoft.TeamFoundation.Controls;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.TeamFoundation.Git.Extensibility;
 
     using TeamExplorer.Common;
-
-    using View;
-    using ViewModel;
 
     /// <summary>
     /// Represents a page in the team explorer
@@ -40,7 +40,7 @@
             this.teamExplorer = (ITeamExplorer)serviceProvider.GetService(typeof(ITeamExplorer));
 
             this.gitService = (IGitExt)serviceProvider.GetService(typeof(IGitExt));
-            this.gitService.PropertyChanged += (sender, e) => this.Refresh();
+            this.gitService.PropertyChanged += (sender, e) => this.SetViewModel();
         }
 
         /// <summary>
@@ -72,19 +72,24 @@
 
             this.PageContent = this.view;
 
+            this.SetViewModel();
+
             this.Refresh();
         }
 
         /// <inheritdoc />
         public override void Refresh()
         {
-            var showBranches = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitBranches));
-            this.view.ViewModel = new SquashViewModel(new GitSquashWrapper(this.GetRepositoryDirectory()), showBranches);
+            this.view.ViewModel.Refresh();
         }
 
-        private string GetRepositoryDirectory()
+        private void SetViewModel()
         {
-            return this.gitService.ActiveRepositories.FirstOrDefault()?.RepositoryPath;
+            var showBranches = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitBranches));
+            var showConflicts = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitConflicts));
+            var showChanges = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitChanges));
+            var squashWrapper = this.GetService<IGitSquashWrapper>();
+            this.view.ViewModel = new SquashViewModel(squashWrapper, showBranches, showConflicts, showChanges);
         }
 
         private bool AreGitToolsInstalled()

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace GitRebase.VisualStudio.Extension.Properties {
+namespace GitSquash.VisualStudio.Extension.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace GitRebase.VisualStudio.Extension.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("GitRebase.VisualStudio.Extension.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("GitSquash.VisualStudio.Extension.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -77,6 +77,15 @@ namespace GitRebase.VisualStudio.Extension.Properties {
             get {
                 object obj = ResourceManager.GetObject("SquashIcon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Squash.
+        /// </summary>
+        internal static string SquashName {
+            get {
+                return ResourceManager.GetString("SquashName", resourceCulture);
             }
         }
     }

@@ -1,9 +1,8 @@
-﻿namespace GitRebase.VisualStudio.Extension.View
+﻿namespace GitSquash.VisualStudio.Extension.View
 {
     using System.Windows;
-    using System.Windows.Controls;
 
-    using GitRebase.VisualStudio.Extension.ViewModel;
+    using GitSquash.VisualStudio.Extension.ViewModel;
 
     /// <summary>
     /// Interaction logic for SquashView.xaml

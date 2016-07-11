@@ -8,8 +8,8 @@
     <ProjectGuid>{D6EE82CD-F83F-46D5-9A69-5941C519BE93}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>GitRebase.VisualStudio</RootNamespace>
-    <AssemblyName>GitRebase.VisualStudio</AssemblyName>
+    <RootNamespace>GitSquash.VisualStudio</RootNamespace>
+    <AssemblyName>GitSquash.VisualStudio</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
@@ -23,7 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\GitRebase.VisualStudio.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\GitSquash.VisualStudio.xml</DocumentationFile>
     <CodeAnalysisRuleSet>..\gitsquashruleset.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -33,7 +33,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\GitRebase.VisualStudio.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\GitSquash.VisualStudio.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -71,10 +71,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GitBranch.cs" />
     <Compile Include="GitCommandResponse.cs" />
     <Compile Include="GitCommandTimeOut.cs" />
+    <Compile Include="GitCommit.cs" />
     <Compile Include="GitHelper.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="IGitSquashOutputLogger.cs" />
     <Compile Include="IGitSquashWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GitSquashWrapper.cs" />

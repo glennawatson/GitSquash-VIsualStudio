@@ -1,4 +1,4 @@
-﻿namespace GitRebase.VisualStudio.Extension
+﻿namespace GitSquash.VisualStudio.Extension
 {
     using System;
     using System.Collections.Generic;
@@ -22,7 +22,7 @@
             {
                 InstrumentationKey = "0b2258d0-45b4-405b-9c01-53bbfff9721d"
             };
-            TelemetryClient.Context.Properties["VisualStudioVersion"] = VSVersion.FullVersion.ToString();
+            TelemetryClient.Context.Properties["VisualStudioVersion"] = VsVersion.FullVersion.ToString();
             TelemetryClient.Context.Component.Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             TelemetryClient.Context.Session.Id = Guid.NewGuid().ToString();
             TelemetryClient.Context.User.Id = UserSettings.UserId;

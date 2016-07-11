@@ -1,13 +1,4 @@
-﻿//------------------------------------------------------------------------------
-// <copyright file="GitRebasePackage.cs" company="Glenn Watson">
-//     Copyright (c) Glenn Watson.  All rights reserved.
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// </copyright>
-//------------------------------------------------------------------------------
-namespace GitRebase.VisualStudio.Extension
+﻿namespace GitSquash.VisualStudio.Extension
 {
     using System;
     using System.ComponentModel.Design;
@@ -16,7 +7,6 @@ namespace GitRebase.VisualStudio.Extension
     using System.Linq;
     using System.Runtime.InteropServices;
 
-    using Microsoft.TeamFoundation.Git.Controls.Extensibility;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.TeamFoundation.Git.Extensibility;
@@ -63,10 +53,6 @@ namespace GitRebase.VisualStudio.Extension
 
         private IGitExt gitService;
 
-        private IHistoryExt2 gitHistory;
-
-        private IGitSquashWrapper squashWrapper;
-
         /// <summary>
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
@@ -74,60 +60,42 @@ namespace GitRebase.VisualStudio.Extension
         protected override void Initialize()
         {
             base.Initialize();
-
+            this.TraceWriteLine("Package Initialization: Starting");
             IServiceContainer serviceContainer = this;
+            ServiceCreatorCallback callback = this.CreateGitWrapperService;
+            serviceContainer.AddService(typeof(IGitSquashWrapper), callback, true);
+            this.gitService = (IGitExt)this.GetService(typeof(IGitExt));
 
-            this.gitService = (IGitExt)serviceContainer.GetService(typeof(IGitExt));
-            this.gitHistory = (IHistoryExt2)serviceContainer.GetService(typeof(IHistoryExt2));
-
-            serviceContainer.AddService(typeof(IGitSquashWrapper), this.CreateGitWrapperService, true);
-        }
-
-        private object CreateGitWrapperService(IServiceContainer container, Type serviceType)
-        {
-            if (typeof(IGitSquashWrapper) != serviceType)
-            {
-                return null;
-            }
-
-            if (this.squashWrapper != null)
-            {
-                return this.squashWrapper;
-            }
-
-            var outWindow = GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
-            var customGuid = new Guid("27AF351D-6A16-47E5-8D9D-0EF16C348395");
-            if (outWindow != null)
-            {
-                outWindow.CreatePane(ref customGuid, "Git Commit Squash", 1, 1);
-                IVsOutputWindowPane outputWindow;
-                outWindow.GetPane(ref customGuid, out outputWindow);
-            }
-
-            if (this.gitService.ActiveRepositories.FirstOrDefault() != null)
-            {
-                IGitRepositoryInfo gitRepositoryInfo = this.gitService.ActiveRepositories.FirstOrDefault();
-                if (gitRepositoryInfo == null)
-                {
-                    return this.squashWrapper;
-                }
-
-                string path = gitRepositoryInfo.RepositoryPath;
-                this.TraceWriteLine("Creating Wrapper service with path: " + path);
-                this.squashWrapper = new GitSquashWrapper(this.gitService.ActiveRepositories.First().RepositoryPath);
-            }
-            else
-            {
-                this.TraceWriteLine("Creating Wrapper service.");
-                this.squashWrapper = null;
-            }
-
-            return this.squashWrapper;
+            this.TraceWriteLine("Package Initialization: Done");
         }
 
         private void TraceWriteLine(string msg)
         {
             Trace.WriteLine("**********" + msg);
+        }
+
+        private object CreateGitWrapperService(IServiceContainer container, Type serviceType)
+        {
+            this.TraceWriteLine("Service Requested: " + serviceType.FullName);
+            if (typeof(IGitSquashWrapper) == serviceType)
+            {
+                IVsOutputWindowPane outputWindow;
+                var outWindow = GetGlobalService(typeof(SVsOutputWindow)) as IVsOutputWindow;
+                var customGuid = new Guid("E53E7910-5B4F-4C5D-95BE-92BD439178E6");
+                outWindow.CreatePane(ref customGuid, "Git Squash", 1, 1);
+                outWindow.GetPane(ref customGuid, out outputWindow);
+                IGitSquashWrapper wrapper = null;
+                if (this.gitService.ActiveRepositories.FirstOrDefault() != null)
+                {
+                    string path = this.gitService.ActiveRepositories.FirstOrDefault()?.RepositoryPath;
+                    this.TraceWriteLine("Creating Wrapper service with path: " + path);
+                    wrapper = new GitSquashWrapper(path, new OutputWindowLogger(outputWindow));
+                }
+
+                return wrapper;
+            }
+
+            throw new ArgumentException();
         }
     }
 }

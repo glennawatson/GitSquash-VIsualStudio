@@ -1,11 +1,9 @@
-﻿namespace GitRebase.VisualStudio.Extension
+﻿namespace GitSquash.VisualStudio.Extension
 {
     using System;
     using System.ComponentModel;
     using System.ComponentModel.Composition;
     using System.Linq;
-
-    using GitRebase.VisualStudio.Extension.Properties;
 
     using Microsoft.TeamFoundation.Controls;
     using Microsoft.VisualStudio.Shell;
@@ -32,9 +30,9 @@
             try
             {
                 this.UpdateVisible();
-                this.Image = Resources.SquashIcon;
+                this.Image = Properties.Resources.SquashIcon;
                 this.IsVisible = false;
-                this.Text = "Squash";
+                this.Text = Properties.Resources.SquashName;
                 var teamExplorer = this.GetService<ITeamExplorer>();
                 teamExplorer.PropertyChanged += this.TeamExplorerOnPropertyChanged;
                 this.gitService = (IGitExt)serviceProvider.GetService(typeof(IGitExt));
@@ -76,11 +74,7 @@
 
         private void UpdateVisible()
         {
-            this.IsVisible = false;
-            if (this.gitService != null && this.gitService.ActiveRepositories.Any())
-            {
-                this.IsVisible = true;
-            }
+            this.IsVisible = this.gitService != null && this.gitService.ActiveRepositories.Any();
         }
 
         private void HandleException(Exception ex)

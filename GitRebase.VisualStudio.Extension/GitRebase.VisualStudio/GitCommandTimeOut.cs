@@ -1,4 +1,4 @@
-﻿namespace GitRebase.VisualStudio
+﻿namespace GitSquash.VisualStudio
 {
     /// <summary>
     /// A response when there has been a time out from git.

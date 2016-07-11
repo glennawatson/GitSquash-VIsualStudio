@@ -1,4 +1,4 @@
-﻿namespace GitRebase.VisualStudio
+﻿namespace GitSquash.VisualStudio
 {
     /// <summary>
     /// A response after we have initiated a command to git.
