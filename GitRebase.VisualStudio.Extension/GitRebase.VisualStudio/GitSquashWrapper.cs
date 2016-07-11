@@ -116,11 +116,8 @@
                 return response;
             }
 
-            var rewriterName = Path.Combine(Assembly.GetExecutingAssembly().Location, "rebasewriter.exe");
-
             return this.RunGitFlow(
-                $"rebase -i {parentBranch.FriendlyName}",
-                new Dictionary<string, string> { { "GIT_SEQUENCE_EDITOR", rewriterName } });
+                $"rebase {parentBranch.FriendlyName}");
         }
 
         /// <inheritdoc />

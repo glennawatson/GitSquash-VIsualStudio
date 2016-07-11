@@ -89,7 +89,10 @@
     <Content Include="FodyWeavers.xml" />
     <Content Include="index.html" />
     <None Include="Resources\compress.ico" />
-    <Content Include="Resources\SquashIcon.ico" />
+    <Content Include="Resources\SquashIcon.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="Resources\SquashIcon.png" />
     <Content Include="stylesheet.css" />
   </ItemGroup>

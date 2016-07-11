@@ -3,7 +3,6 @@
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.Linq;
-    using System.Runtime.CompilerServices;
     using System.Windows.Input;
 
     using GalaSoft.MvvmLight;
@@ -19,6 +18,8 @@
         private IGitSquashWrapper squashWrapper;
 
         private Commit selectedCommit;
+
+        private Branch rebaseBranch;
 
         private string commitMessage;
 
@@ -40,6 +41,7 @@
 
             this.PropertyChanged += this.OnPropertyChanged;
             this.CurrentBranch = this.SquashWrapper?.GetCurrentBranch();
+            this.Branches = this.SquashWrapper?.GetRemoteBranches();
 
             this.IsRebaseInProgress = this.squashWrapper.IsRebaseHappening();
         }
@@ -89,6 +91,23 @@
             set
             {
                 this.Set(ref this.rebaseInProgress, value);
+            }
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<Branch> Branches { get; }
+
+        /// <inheritdoc />
+        public Branch SelectedRebaseBranch
+        {
+            get
+            {
+                return this.rebaseBranch;
+            }
+
+            set
+            {
+                this.Set(ref this.rebaseBranch, value);
             }
         }
 

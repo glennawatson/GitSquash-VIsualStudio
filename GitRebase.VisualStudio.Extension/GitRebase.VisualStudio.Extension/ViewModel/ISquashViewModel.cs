@@ -51,5 +51,15 @@
         /// Gets a value indicating whether there is currently a rebase in operation.
         /// </summary>
         bool IsRebaseInProgress { get; }
+
+        /// <summary>
+        /// Gets a collection of branches for the project.
+        /// </summary>
+        IEnumerable<Branch> Branches { get; }
+
+        /// <summary>
+        /// Gets or sets the selected rebase branch.
+        /// </summary>
+        Branch SelectedRebaseBranch { get; set; }
     }
 }
