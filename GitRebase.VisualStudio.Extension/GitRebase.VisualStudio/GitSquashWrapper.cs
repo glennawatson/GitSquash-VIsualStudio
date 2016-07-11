@@ -5,6 +5,7 @@
     using System.Diagnostics;
     using System.IO;
     using System.Linq;
+    using System.Reflection;
     using System.Text;
 
     using LibGit2Sharp;
@@ -17,13 +18,14 @@
     [ImplementPropertyChanged]
     public class GitSquashWrapper : IGitSquashWrapper
     {
+
         private static StringBuilder output = new StringBuilder();
 
         private static StringBuilder error = new StringBuilder();
 
         private readonly string repoDirectory;
 
-        private Repository repository;
+        private readonly Repository repository;
 
         private bool isDisposed;
 
@@ -38,8 +40,17 @@
             this.repository = new Repository(repoDirectory);
         }
 
-        /// <inheritdoc />
-        public string ParentBranch { get; set; }
+        /// <summary>
+        /// Delegate that passes along a string.
+        /// </summary>
+        /// <param name="sender">The sender of the event.</param>
+        /// <param name="param">The string parameter.</param>
+        public delegate void StringDelegate(object sender, string param);
+
+        /// <summary>
+        /// A event that occurs when there is output from the git command line.
+        /// </summary>
+        public event StringDelegate GitOutput;
 
         /// <inheritdoc />
         public void Dispose()
@@ -51,8 +62,13 @@
         /// <inheritdoc />
         public string GetCommitMessages(Commit startCommit)
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (var commit in this.GetCurrentBranch().Commits.SkipWhile(x => x.Sha != startCommit.Sha))
+            if (startCommit == null)
+            {
+                return null;
+            }
+
+            var sb = new StringBuilder();
+            foreach (Commit commit in this.GetCurrentBranch().Commits.SkipWhile(x => x.Sha != startCommit.Sha))
             {
                 sb.AppendLine(commit.Message);
             }
@@ -60,18 +76,51 @@
             return sb.ToString();
         }
 
+        /// <inheritdoc />
         public Branch GetCurrentBranch()
         {
             return this.repository.Head;
         }
 
         /// <inheritdoc />
-        public void Squash()
+        public GitCommandResponse PushForce()
         {
-            if (string.IsNullOrWhiteSpace(this.ParentBranch))
+            return this.RunGitFlow("push -f");
+        }
+
+        /// <inheritdoc />
+        public bool IsRebaseHappening()
+        {
+            bool isFile = Directory.Exists(Path.Combine(this.repoDirectory, ".git/rebase-apply"));
+
+            return isFile || Directory.Exists(Path.Combine(this.repoDirectory, ".git/rebase-merge"));
+        }
+
+        /// <inheritdoc />
+        public GitCommandResponse Squash(string newCommitMessage, Commit startCommit)
+        {
+            var rewriterName = Path.Combine(Assembly.GetExecutingAssembly().Location, "rebasewriter.exe");
+
+            return this.RunGitFlow(
+                $"rebase -i {startCommit.Sha}",
+                new Dictionary<string, string> { { "GIT_INTERACTIVE_EDITOR", rewriterName } });
+        }
+
+        /// <inheritdoc />
+        public GitCommandResponse Squash(string newCommitMessage, Branch parentBranch)
+        {
+            var response = this.RunGitFlow("fetch origin");
+
+            if (response.Success == false)
             {
-                return;
+                return response;
             }
+
+            var rewriterName = Path.Combine(Assembly.GetExecutingAssembly().Location, "rebasewriter.exe");
+
+            return this.RunGitFlow(
+                $"rebase -i {parentBranch.FriendlyName}",
+                new Dictionary<string, string> { { "GIT_SEQUENCE_EDITOR ", rewriterName } });
         }
 
         /// <inheritdoc />
@@ -111,13 +160,41 @@
             this.isDisposed = true;
         }
 
-        private GitCommandResponse RunGitFlow(string gitArguments)
+        private static Process CreateGitFlowProcess(string arguments, string repoDirectory)
+        {
+            var gitInstallationPath = GitHelper.GetGitInstallationPath();
+            string pathToGit = Path.Combine(Path.Combine(gitInstallationPath, "bin\\git.exe"));
+            return new Process
+            {
+                StartInfo =
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    FileName = pathToGit,
+                    Arguments = arguments,
+                    WorkingDirectory = repoDirectory
+                }
+            };
+        }
+
+        private GitCommandResponse RunGitFlow(string gitArguments, IDictionary<string, string> extraEnvironmentVariables = null)
         {
             error = new StringBuilder();
             output = new StringBuilder();
 
             using (var p = CreateGitFlowProcess(gitArguments, this.repoDirectory))
             {
+                if (extraEnvironmentVariables != null)
+                {
+                    foreach (var kvp in extraEnvironmentVariables)
+                    {
+                        p.StartInfo.EnvironmentVariables.Add(kvp.Key, kvp.Value);
+                    }
+                }
+
                 p.Start();
                 p.ErrorDataReceived += this.OnErrorReceived;
                 p.OutputDataReceived += this.OnOutputDataReceived;
@@ -151,6 +228,7 @@
 
             output.Append(dataReceivedEventArgs.Data);
             Debug.WriteLine(dataReceivedEventArgs.Data);
+            this.GitOutput?.Invoke(this, dataReceivedEventArgs.Data);
         }
 
         private void OnErrorReceived(object sender, DataReceivedEventArgs dataReceivedEventArgs)
@@ -164,26 +242,6 @@
             error = new StringBuilder();
             error.Append(dataReceivedEventArgs.Data);
             Debug.WriteLine(dataReceivedEventArgs.Data);
-        }
-
-        private static Process CreateGitFlowProcess(string arguments, string repoDirectory)
-        {
-            var gitInstallationPath = GitHelper.GetGitInstallationPath();
-            string pathToGit = Path.Combine(Path.Combine(gitInstallationPath, "bin\\git.exe"));
-            return new Process
-            {
-                StartInfo =
-                {
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    FileName = pathToGit,
-                    Arguments = arguments,
-                    WorkingDirectory = repoDirectory
-                }
-            };
         }
     }
 }

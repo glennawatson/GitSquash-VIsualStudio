@@ -59,8 +59,10 @@
     <DocumentationFile>bin\Release\GitRebase.VisualStudio.Extension.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Converters\PrefixValueConverter.cs" />
     <Compile Include="GitSquashPackage.cs" />
     <Compile Include="Logger.cs" />
+    <Compile Include="Properties\Annotations.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -70,7 +72,6 @@
     <Compile Include="SquashNavigationItem.cs" />
     <Compile Include="SquashPage.cs" />
     <Compile Include="ViewModel\ISquashViewModel.cs" />
-    <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\SquashViewModel.cs" />
     <Compile Include="View\SquashView.xaml.cs">
       <DependentUpon>SquashView.xaml</DependentUpon>
@@ -267,6 +268,11 @@
       <Name>GitSquash.VisualStudio</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+    </ProjectReference>
+    <ProjectReference Include="..\RebaseWriter\RebaseWriter.csproj">
+      <Project>{EFD6C183-797C-4F3B-8C6B-7DDD482352AD}</Project>
+      <Name>RebaseWriter</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

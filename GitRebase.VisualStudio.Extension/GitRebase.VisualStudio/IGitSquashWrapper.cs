@@ -15,14 +15,26 @@ namespace GitRebase.VisualStudio
     public interface IGitSquashWrapper : IDisposable
     {
         /// <summary>
-        /// Gets or sets the parent item that the git squash will be performed on.
+        /// Determines if there is currently a rebase in operation.
         /// </summary>
-        string ParentBranch { get; set; }
+        /// <returns>True if rebase in operation, false otherwise.</returns>
+        bool IsRebaseHappening();
 
         /// <summary>
         /// Performs the squash action.
         /// </summary>
-        void Squash();
+        /// <param name="newCommitMessage">The new commit message for the squashed commit.</param>
+        /// <param name="startCommit">The commit to start the rebase/squash from.</param>
+        /// <returns>Details about the commit.</returns>
+        GitCommandResponse Squash(string newCommitMessage, Commit startCommit);
+
+        /// <summary>
+        /// Performs the squash action.
+        /// </summary>
+        /// <param name="newCommitMessage">The new commit message for the squashed commit.</param>
+        /// <param name="parentBranch">The branch parent to parent the rebase/squash from.</param>
+        /// <returns>Details about the commit.</returns>
+        GitCommandResponse Squash(string newCommitMessage, Branch parentBranch);
 
         /// <summary>
         /// Aborts a attempt to squash/rebase.
@@ -52,5 +64,11 @@ namespace GitRebase.VisualStudio
         /// </summary>
         /// <returns>The current branch.</returns>
         Branch GetCurrentBranch();
+
+        /// <summary>
+        /// Performs a push to the GIT repository using a force.
+        /// </summary>
+        /// <returns>Details about the operation.</returns>
+        GitCommandResponse PushForce();
     }
 }

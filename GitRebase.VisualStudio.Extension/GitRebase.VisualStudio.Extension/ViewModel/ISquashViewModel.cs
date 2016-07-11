@@ -14,7 +14,7 @@
         /// <summary>
         /// Gets a command that performs the squash.
         /// </summary>
-        ICommand PerformSquash { get; }
+        ICommand Squash { get; }
 
         /// <summary>
         /// Gets or sets the wrapper for the git squash operation.
@@ -27,8 +27,29 @@
         Branch CurrentBranch { get; }
 
         /// <summary>
+        /// Gets or sets the currently selected commit.
+        /// </summary>
+        Commit SelectedCommit { get; set; }
+
+        /// <summary>
         /// Gets a command which will change the current branch.
         /// </summary>
         ICommand ChangeBranch { get; }
+
+        /// <summary>
+        /// Gets or sets the commit message to be used when squashed.
+        /// </summary>
+        string CommitMessage { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether we are going to do a force
+        /// push once the rebase/squash has finished.
+        /// </summary>
+        bool ForcePush { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether there is currently a rebase in operation.
+        /// </summary>
+        bool IsRebaseInProgress { get; }
     }
 }
