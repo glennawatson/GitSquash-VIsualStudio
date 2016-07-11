@@ -107,7 +107,7 @@
         }
 
         /// <inheritdoc />
-        public GitCommandResponse Squash(string newCommitMessage, Branch parentBranch)
+        public GitCommandResponse Rebase(Branch parentBranch)
         {
             var response = this.RunGitFlow("fetch origin");
 

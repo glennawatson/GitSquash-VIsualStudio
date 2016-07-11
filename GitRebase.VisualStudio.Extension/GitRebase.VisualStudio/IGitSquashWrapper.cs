@@ -31,10 +31,9 @@ namespace GitRebase.VisualStudio
         /// <summary>
         /// Performs the squash action.
         /// </summary>
-        /// <param name="newCommitMessage">The new commit message for the squashed commit.</param>
         /// <param name="parentBranch">The branch parent to parent the rebase/squash from.</param>
         /// <returns>Details about the commit.</returns>
-        GitCommandResponse Squash(string newCommitMessage, Branch parentBranch);
+        GitCommandResponse Rebase(Branch parentBranch);
 
         /// <summary>
         /// Aborts a attempt to squash/rebase.
