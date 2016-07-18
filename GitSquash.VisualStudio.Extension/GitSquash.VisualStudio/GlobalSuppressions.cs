@@ -4,5 +4,4 @@
 // a specific target and scoped to a namespace, type, member, etc.
 using System.Diagnostics.CodeAnalysis;
 
-[assembly:
-    SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1636:File header copyright text must match", Justification = "Don't care", Scope = "namespace", Target = "~N:GitRebase.VisualStudio")]
+[assembly: SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1636:File header copyright text must match", Justification = "Don't care", Scope = "namespace", Target = "~N:GitRebase.VisualStudio")]

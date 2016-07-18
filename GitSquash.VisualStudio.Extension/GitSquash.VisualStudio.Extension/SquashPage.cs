@@ -3,20 +3,15 @@
     using System;
     using System.ComponentModel.Composition;
     using System.IO;
-    using System.Linq;
     using System.Windows;
     using System.Windows.Threading;
-
     using GalaSoft.MvvmLight.Command;
-
-    using GitSquash.VisualStudio.Extension.View;
-    using GitSquash.VisualStudio.Extension.ViewModel;
-
     using Microsoft.TeamFoundation.Controls;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.TeamFoundation.Git.Extensibility;
-
     using TeamExplorer.Common;
+    using View;
+    using ViewModel;
 
     /// <summary>
     /// Represents a page in the team explorer
@@ -62,7 +57,7 @@
 
             this.Title = "Squash";
 
-            if (this.AreGitToolsInstalled() == false)
+            if (AreGitToolsInstalled() == false)
             {
                 this.ShowPage(TeamExplorerPageIds.GitInstallThirdPartyTools);
                 return;
@@ -83,21 +78,21 @@
             this.view.ViewModel.Refresh();
         }
 
-        private void SetViewModel()
-        {
-            var showBranches = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitBranches));
-            var showConflicts = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitConflicts));
-            var showChanges = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitChanges));
-            var squashWrapper = this.GetService<IGitSquashWrapper>();
-            this.view.ViewModel = new SquashViewModel(squashWrapper, showBranches, showConflicts, showChanges);
-        }
-
-        private bool AreGitToolsInstalled()
+        private static bool AreGitToolsInstalled()
         {
             var gitInstallationPath = GitHelper.GetGitInstallationPath();
             string pathToGit = Path.Combine(Path.Combine(gitInstallationPath, "bin\\git.exe"));
 
             return File.Exists(pathToGit);
+        }
+
+        private void SetViewModel()
+        {
+            RelayCommand showBranches = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitBranches));
+            RelayCommand showConflicts = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitConflicts));
+            RelayCommand showChanges = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitChanges));
+            IGitSquashWrapper squashWrapper = this.GetService<IGitSquashWrapper>();
+            this.view.ViewModel = new SquashViewModel(squashWrapper, showBranches, showConflicts, showChanges);
         }
     }
 }

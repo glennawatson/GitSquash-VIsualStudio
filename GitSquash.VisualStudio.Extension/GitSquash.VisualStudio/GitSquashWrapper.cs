@@ -25,7 +25,7 @@ namespace GitSquash.VisualStudio
 
         private static StringBuilder error = new StringBuilder();
 
-        private readonly IGitSquashOutputLogger outputLogger;
+        private static IGitSquashOutputLogger outputLogger;
 
         private readonly string repoDirectory;
 
@@ -37,11 +37,11 @@ namespace GitSquash.VisualStudio
         /// Initializes a new instance of the <see cref="GitSquashWrapper" /> class.
         /// </summary>
         /// <param name="repoDirectory">The directory where the repository is located</param>
-        /// <param name="outputLogger">The output logger to output git transactions.</param>
-        public GitSquashWrapper(string repoDirectory, IGitSquashOutputLogger outputLogger)
+        /// <param name="logger">The output logger to output git transactions.</param>
+        public GitSquashWrapper(string repoDirectory, IGitSquashOutputLogger logger)
         {
             this.repoDirectory = repoDirectory;
-            this.outputLogger = outputLogger;
+            outputLogger = logger;
 
             this.repository = new Repository(repoDirectory);
         }
@@ -208,7 +208,7 @@ namespace GitSquash.VisualStudio
 
             if (isDisposing)
             {
-                this.repository?.Dispose();
+                this.repository.Dispose();
             }
 
             this.isDisposed = true;
@@ -225,7 +225,11 @@ namespace GitSquash.VisualStudio
         {
             var tcs = new TaskCompletionSource<int>();
 
-            token.Register(process.Kill);
+            token.Register(() =>
+            {
+                process.Kill();
+                outputLogger.WriteLine("Killing GIT process.");
+            });
 
             process.Exited += (s, ea) => tcs.SetResult(process.ExitCode);
 
@@ -281,7 +285,7 @@ namespace GitSquash.VisualStudio
 
         private async Task<GitCommandResponse> RunGit(string gitArguments, CancellationToken token, IDictionary<string, string> extraEnvironmentVariables = null, [CallerMemberName] string callerMemberName = null)
         {
-            this.outputLogger.WriteLine($"execute: git {gitArguments}");
+            outputLogger.WriteLine($"execute: git {gitArguments}");
             error = new StringBuilder();
             output = new StringBuilder();
 
@@ -317,7 +321,7 @@ namespace GitSquash.VisualStudio
             }
 
             output.Append(dataReceivedEventArgs.Data);
-            this.outputLogger.WriteLine(dataReceivedEventArgs.Data);
+            outputLogger.WriteLine(dataReceivedEventArgs.Data);
         }
 
         private void OnErrorReceived(object sender, DataReceivedEventArgs dataReceivedEventArgs)
@@ -329,14 +333,13 @@ namespace GitSquash.VisualStudio
 
             if (!dataReceivedEventArgs.Data.StartsWith("fatal:", StringComparison.OrdinalIgnoreCase))
             {
-                this.outputLogger.WriteLine(dataReceivedEventArgs.Data);
+                outputLogger.WriteLine(dataReceivedEventArgs.Data);
                 return;
             }
 
             error = new StringBuilder();
             error.Append(dataReceivedEventArgs.Data);
-            Debug.WriteLine(dataReceivedEventArgs.Data);
-            this.outputLogger.WriteLine($"Error: {dataReceivedEventArgs.Data}");
+            outputLogger.WriteLine($"Error: {dataReceivedEventArgs.Data}");
         }
     }
 }

@@ -2,7 +2,7 @@
 {
     using System.Windows;
 
-    using GitSquash.VisualStudio.Extension.ViewModel;
+    using ViewModel;
 
     /// <summary>
     /// Interaction logic for SquashView.xaml

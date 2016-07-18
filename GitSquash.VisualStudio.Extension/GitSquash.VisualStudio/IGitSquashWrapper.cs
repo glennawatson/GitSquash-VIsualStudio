@@ -1,8 +1,4 @@
-﻿// <copyright file="IGitSquashWrapper.cs" company="Glenn Watson">
-// Copyright (c) Glenn Watson. All rights reserved.
-// </copyright>
-
-namespace GitSquash.VisualStudio
+﻿namespace GitSquash.VisualStudio
 {
     using System;
     using System.Collections.Generic;

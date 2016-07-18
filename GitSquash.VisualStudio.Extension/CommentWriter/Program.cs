@@ -23,16 +23,9 @@
 
             var tempCommentFileName = Environment.GetEnvironmentVariable("COMMENT_FILE_NAME");
 
-            if (string.IsNullOrWhiteSpace(tempCommentFileName))
-            {
-                string[] lines = File.ReadAllLines(fileName);
-                WriteCommentFile(fileName, lines);
-            }
-            else
-            {
-                string[] lines = File.ReadAllLines(tempCommentFileName);
-                WriteCommentFile(fileName, lines);
-            }
+            string[] lines = File.ReadAllLines(string.IsNullOrWhiteSpace(tempCommentFileName) ? fileName : tempCommentFileName);
+
+            WriteCommentFile(fileName, lines);
         }
 
         private static void WriteCommentFile(string fileName, string[] lines)

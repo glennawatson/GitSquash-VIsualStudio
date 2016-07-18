@@ -33,7 +33,7 @@
                 this.Image = Properties.Resources.SquashIcon;
                 this.IsVisible = false;
                 this.Text = Properties.Resources.SquashName;
-                var teamExplorer = this.GetService<ITeamExplorer>();
+                ITeamExplorer teamExplorer = this.GetService<ITeamExplorer>();
                 teamExplorer.PropertyChanged += this.TeamExplorerOnPropertyChanged;
                 this.gitService = (IGitExt)serviceProvider.GetService(typeof(IGitExt));
             }
@@ -58,7 +58,7 @@
                 this.ShowNotification(ex.Message, NotificationType.Error);
             }
 
-            var service = this.GetService<ITeamExplorer>();
+            ITeamExplorer service = this.GetService<ITeamExplorer>();
             service?.NavigateToPage(new Guid(GitSquashPackage.SquashPageGuidString), null);
         }
 
