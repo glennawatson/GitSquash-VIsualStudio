@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Input;
 
@@ -16,36 +17,38 @@
     /// </summary>
     public class SquashViewModel : ViewModelBase, ISquashViewModel
     {
-        private IGitSquashWrapper squashWrapper;
+        private bool applyRebase = true;
+
+        private IList<GitCommit> branchCommits;
 
         private IList<GitBranch> branches;
 
-        private IList<GitCommit> branchCommits; 
-
-        private GitCommandResponse gitCommandResponse;
-
-        private GitCommit selectedCommit;
-
-        private GitBranch rebaseBranch;
+        private string commitMessage;
 
         private GitBranch currentBranch;
 
-        private string commitMessage;
-
         private bool forcePush = true;
 
-        private bool rebaseInProgress;
-
-        private bool isConflicts;
-
-        private bool applyRebase = true;
+        private GitCommandResponse gitCommandResponse;
 
         private bool isBusy;
 
+        private bool isConflicts;
+
         private bool isDirty;
 
+        private GitBranch rebaseBranch;
+
+        private bool rebaseInProgress;
+
+        private GitCommit selectedCommit;
+
+        private IGitSquashWrapper squashWrapper;
+
+        private CancellationTokenSource tokenSource;
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="SquashViewModel"/> class.
+        /// Initializes a new instance of the <see cref="SquashViewModel" /> class.
         /// </summary>
         /// <param name="squashWrapper">Our model that we retrieve data from.</param>
         /// <param name="changeBranch">A command to change the current branch.</param>
@@ -86,6 +89,7 @@
             this.Rebase = new RelayCommand(async _ => await this.ExecuteGitBackground(this.PerformRebase), this.CanPerformRebase);
             this.ContinueRebase = new RelayCommand(async _ => await this.ExecuteGitBackground(this.PerformContinueRebase), this.CanContinueRebase);
             this.AbortRebase = new RelayCommand(async _ => await this.ExecuteGitBackground(this.PerformAbortRebase), this.CanContinueRebase);
+            this.CancelOperation = new RelayCommand(this.PerformCancelOperation, _ => this.tokenSource != null);
         }
 
         /// <inheritdoc />
@@ -105,6 +109,9 @@
 
         /// <inheritdoc />
         public ICommand AbortRebase { get; }
+
+        /// <inheritdoc />
+        public ICommand CancelOperation { get; }
 
         /// <inheritdoc />
         public bool IsConflicts
@@ -312,8 +319,8 @@
         /// <inheritdoc />
         public void Refresh()
         {
-            var oldCommitText = this.CommitMessage;
-            var oldCommit = this.SelectedCommit;
+            string oldCommitText = this.CommitMessage;
+            GitCommit oldCommit = this.SelectedCommit;
 
             this.Branches = this.SquashWrapper.GetBranches();
             this.CurrentBranch = this.SquashWrapper.GetCurrentBranch();
@@ -331,12 +338,32 @@
             this.CommitMessage = string.IsNullOrWhiteSpace(oldCommitText) ? this.CommitMessage : oldCommitText;
         }
 
-        private async Task ExecuteGitBackground(Func<Task<GitCommandResponse>> func)
+        private void PerformCancelOperation(object argument)
+        {
+            try
+            {
+                this.tokenSource?.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+
+        private async Task ExecuteGitBackground(Func<CancellationToken, Task<GitCommandResponse>> func)
         {
             this.IsBusy = true;
             try
             {
-                GitCommandResponse rebaseOutput = await func();
+                try
+                {
+                    this.tokenSource?.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+
+                this.tokenSource = new CancellationTokenSource();
+                GitCommandResponse rebaseOutput = await func(this.tokenSource.Token);
                 this.GitCommandResponse = rebaseOutput;
                 this.Refresh();
             }
@@ -350,11 +377,11 @@
             }
         }
 
-        private async Task<GitCommandResponse> PerformSquash()
+        private async Task<GitCommandResponse> PerformSquash(CancellationToken token)
         {
-            GitCommandResponse squashOutput = await this.SquashWrapper.Squash(this.CommitMessage, this.SelectedCommit);
+            GitCommandResponse squashOutput = await this.SquashWrapper.Squash(token, this.CommitMessage, this.SelectedCommit);
 
-            if (squashOutput.Success == false)
+            if (squashOutput.Success == false || token.IsCancellationRequested)
             {
                 return squashOutput;
             }
@@ -362,9 +389,9 @@
             GitCommandResponse forcePushOutput;
             if (this.ForcePush)
             {
-                forcePushOutput = await this.SquashWrapper.PushForce();
+                forcePushOutput = await this.SquashWrapper.PushForce(token);
 
-                if (forcePushOutput.Success == false)
+                if (forcePushOutput.Success == false || token.IsCancellationRequested)
                 {
                     return forcePushOutput;
                 }
@@ -374,41 +401,43 @@
 
             if (this.ApplyRebase)
             {
-                rebaseOutput = await this.SquashWrapper.Rebase(this.SelectedRebaseBranch);
+                rebaseOutput = await this.SquashWrapper.Rebase(token, this.SelectedRebaseBranch);
 
-                if (rebaseOutput.Success == false)
+                if (rebaseOutput.Success == false || token.IsCancellationRequested)
                 {
                     return rebaseOutput;
                 }
             }
 
             forcePushOutput = null;
-            if (this.ForcePush)
+            if (!this.ForcePush)
             {
-                forcePushOutput = await this.SquashWrapper.PushForce();
+                return new GitCommandResponse(true, $"{rebaseOutput?.CommandOutput}\r\n{squashOutput.CommandOutput}\r\n{forcePushOutput.CommandOutput}");
+            }
 
-                if (forcePushOutput.Success == false)
-                {
-                    return forcePushOutput;
-                }
+            forcePushOutput = await this.SquashWrapper.PushForce(token);
+
+            if (forcePushOutput.Success == false || token.IsCancellationRequested)
+            {
+                return forcePushOutput;
             }
 
             return new GitCommandResponse(true, $"{rebaseOutput?.CommandOutput}\r\n{squashOutput.CommandOutput}\r\n{forcePushOutput?.CommandOutput}");
         }
 
-        private Task<GitCommandResponse> PerformRebase()
+        private Task<GitCommandResponse> PerformRebase(CancellationToken token)
         {
-            return this.SquashWrapper.Rebase(this.SelectedRebaseBranch);
+            return this.SquashWrapper.Rebase(token, this.SelectedRebaseBranch);
         }
 
-        private Task<GitCommandResponse> PerformAbortRebase()
+        private Task<GitCommandResponse> PerformAbortRebase(CancellationToken token)
         {
-            return this.SquashWrapper.Abort();
+            return this.SquashWrapper.Abort(token);
         }
 
-        private Task<GitCommandResponse> PerformContinueRebase()
+        private Task<GitCommandResponse> PerformContinueRebase(CancellationToken token)
         {
-            return this.SquashWrapper.Continue(this.CommitMessage);
+            return this.SquashWrapper.Continue(token);
         }
 
         private bool CanContinueRebase(object param)
@@ -423,8 +452,7 @@
 
         private bool CanPerformSquash(object param)
         {
-            return this.SquashWrapper != null && this.SquashWrapper.GetCurrentBranch().FriendlyName == this.CurrentBranch.FriendlyName
-                   && this.SelectedCommit != null && string.IsNullOrWhiteSpace(this.CommitMessage) == false && this.IsBusy == false && this.SquashWrapper.IsWorkingDirectoryDirty() == false;
+            return this.SquashWrapper != null && this.SquashWrapper.GetCurrentBranch().FriendlyName == this.CurrentBranch.FriendlyName && this.SelectedCommit != null && string.IsNullOrWhiteSpace(this.CommitMessage) == false && this.IsBusy == false && this.SquashWrapper.IsWorkingDirectoryDirty() == false;
         }
 
         private void UpdateCommitMessage(GitCommit commit)

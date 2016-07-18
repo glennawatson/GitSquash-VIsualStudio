@@ -8,6 +8,7 @@ namespace GitSquash.VisualStudio
     using System.Reflection;
     using System.Runtime.CompilerServices;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
 
     using LibGit2Sharp;
@@ -77,14 +78,14 @@ namespace GitSquash.VisualStudio
         }
 
         /// <inheritdoc />
-        public async Task<GitCommandResponse> PushForce()
+        public async Task<GitCommandResponse> PushForce(CancellationToken token)
         {
             if (this.repository.Head.IsTracking == false)
             {
                 return new GitCommandResponse(false, "The branch has not been pushed before.");
             }
 
-            return await this.RunGit("push -f");
+            return await this.RunGit("push -f", token);
         }
 
         /// <inheritdoc />
@@ -121,86 +122,71 @@ namespace GitSquash.VisualStudio
         }
 
         /// <inheritdoc />
-        public async Task<GitCommandResponse> Squash(string newCommitMessage, GitCommit startCommit)
+        public async Task<GitCommandResponse> Squash(CancellationToken token, string newCommitMessage, GitCommit startCommit)
         {
             if (this.repository.RetrieveStatus().IsDirty)
             {
                 return new GitCommandResponse(false, "Cannot rebase: You have unstaged changes.");
             }
 
-            string location = Assembly.GetExecutingAssembly().Location;
-
-            if (string.IsNullOrWhiteSpace(location))
+            string rewriterName;
+            string commentWriterName;
+            if (this.GetWritersName(out rewriterName, out commentWriterName) == false)
             {
-                return new GitCommandResponse(false, "Cannot find assembly location");
+                return new GitCommandResponse(false, "Cannot get valid paths to GIT parameters");
             }
-
-            string directoryName;
-            try
-            {
-                directoryName = Path.GetDirectoryName(location);
-            }
-            catch (ArgumentException ex)
-            {
-                return new GitCommandResponse(false, ex.Message);
-            }
-            catch (PathTooLongException ex)
-            {
-                return new GitCommandResponse(false, ex.Message);
-            }
-
-            if (directoryName == null)
-            {
-                return new GitCommandResponse(false, "Cannot find assembly location");
-            }
-
-            string rewriterName = Path.Combine(directoryName, "rebasewriter.exe");
-            string commentWriterName = Path.Combine(directoryName, "commentWriter.exe");
 
             string fileName = Path.GetTempFileName();
             File.WriteAllText(fileName, newCommitMessage);
 
             var environmentVariables = new Dictionary<string, string> { { "COMMENT_FILE_NAME", fileName } };
 
-            return await this.RunGit($"-c core.quotepath=false -c \"sequence.editor=\'{rewriterName}\'\" -c \"core.editor=\'{commentWriterName}\'\" rebase -i  {startCommit.Sha}", environmentVariables);
+            return await this.RunGit($"-c core.quotepath=false -c \"sequence.editor=\'{rewriterName}\'\" -c \"core.editor=\'{commentWriterName}\'\" rebase -i  {startCommit.Sha}", token, environmentVariables);
         }
 
         /// <inheritdoc />
-        public Task<GitCommandResponse> FetchOrigin()
+        public Task<GitCommandResponse> FetchOrigin(CancellationToken token)
         {
-            Task<GitCommandResponse> response = this.RunGit("fetch -v origin");
+            Task<GitCommandResponse> response = this.RunGit("fetch -v origin", token);
 
             return response;
         }
 
         /// <inheritdoc />
-        public async Task<GitCommandResponse> Rebase(GitBranch parentBranch)
+        public async Task<GitCommandResponse> Rebase(CancellationToken token, GitBranch parentBranch)
         {
             if (this.repository.RetrieveStatus().IsDirty)
             {
                 return new GitCommandResponse(false, "Cannot rebase: You have unstaged changes.");
             }
 
-            GitCommandResponse response = await this.FetchOrigin();
+            GitCommandResponse response = await this.FetchOrigin(token);
 
             if (response.Success == false)
             {
                 return response;
             }
 
-            return await this.RunGit($"rebase  {parentBranch.FriendlyName}");
+            return await this.RunGit($"rebase  {parentBranch.FriendlyName}", token);
         }
 
         /// <inheritdoc />
-        public Task<GitCommandResponse> Abort()
+        public Task<GitCommandResponse> Abort(CancellationToken token)
         {
-            return this.RunGit("rebase --abort");
+            return this.RunGit("rebase --abort", token);
         }
 
         /// <inheritdoc />
-        public Task<GitCommandResponse> Continue(string commitMessage)
+        public async Task<GitCommandResponse> Continue(CancellationToken token)
         {
-            return this.RunGit("rebase --continue");
+            string rewriterName;
+            string commentWriterName;
+            if (this.GetWritersName(out rewriterName, out commentWriterName) == false)
+            {
+                return new GitCommandResponse(false, "Cannot get valid paths to GIT parameters");
+            }
+
+            return await this.RunGit($"-c core.quotepath=false -c \"core.editor=\'{commentWriterName}\'\"  rebase --continue", token);
         }
 
         /// <inheritdoc />
@@ -235,9 +221,11 @@ namespace GitSquash.VisualStudio
             return new Process { StartInfo = { CreateNoWindow = true, UseShellExecute = false, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, FileName = pathToGit, Arguments = arguments, WorkingDirectory = repoDirectory }, EnableRaisingEvents = true };
         }
 
-        private static Task<int> RunProcessAsync(Process process)
+        private static Task<int> RunProcessAsync(Process process, CancellationToken token)
         {
             var tcs = new TaskCompletionSource<int>();
+
+            token.Register(process.Kill);
 
             process.Exited += (s, ea) => tcs.SetResult(process.ExitCode);
 
@@ -255,7 +243,43 @@ namespace GitSquash.VisualStudio
             return tcs.Task;
         }
 
-        private async Task<GitCommandResponse> RunGit(string gitArguments, IDictionary<string, string> extraEnvironmentVariables = null, [CallerMemberName] string callerMemberName = null)
+        private bool GetWritersName(out string rebaseWriter, out string commentWriter)
+        {
+            rebaseWriter = null;
+            commentWriter = null;
+
+            try
+            {
+
+                string location = Assembly.GetExecutingAssembly().Location;
+
+                if (string.IsNullOrWhiteSpace(location))
+                {
+                    return false;
+                }
+
+                string directoryName = Path.GetDirectoryName(location);
+
+                if (string.IsNullOrWhiteSpace(directoryName))
+                {
+                    return false;
+                }
+
+                rebaseWriter = Path.Combine(directoryName, "rebasewriter.exe");
+                commentWriter = Path.Combine(directoryName, "commentWriter.exe");
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (PathTooLongException)
+            {
+                return false;
+            }
+        }
+
+        private async Task<GitCommandResponse> RunGit(string gitArguments, CancellationToken token, IDictionary<string, string> extraEnvironmentVariables = null, [CallerMemberName] string callerMemberName = null)
         {
             this.outputLogger.WriteLine($"execute: git {gitArguments}");
             error = new StringBuilder();
@@ -274,7 +298,7 @@ namespace GitSquash.VisualStudio
                 process.ErrorDataReceived += this.OnErrorReceived;
                 process.OutputDataReceived += this.OnOutputDataReceived;
 
-                int returnValue = await RunProcessAsync(process);
+                int returnValue = await RunProcessAsync(process, token);
 
                 if (returnValue == 1)
                 {

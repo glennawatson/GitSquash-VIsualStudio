@@ -25,11 +25,18 @@
 
             if (string.IsNullOrWhiteSpace(tempCommentFileName))
             {
-                return;
+                string[] lines = File.ReadAllLines(fileName);
+                WriteCommentFile(fileName, lines);
             }
+            else
+            {
+                string[] lines = File.ReadAllLines(tempCommentFileName);
+                WriteCommentFile(fileName, lines);
+            }
+        }
 
-            string[] lines = File.ReadAllLines(tempCommentFileName);
-
+        private static void WriteCommentFile(string fileName, string[] lines)
+        {
             using (var writer = new StreamWriter(fileName))
             {
                 writer.NewLine = "\n";

@@ -10,7 +10,7 @@
              xmlns:converters1="clr-namespace:Microsoft.TeamFoundation.Controls.WPF.Converters;assembly=Microsoft.TeamFoundation.Controls"
              mc:Ignorable="d" 
              x:Name="UserControl"
-             d:DesignHeight="300" d:DesignWidth="300">
+             d:DesignHeight="400" d:DesignWidth="300">
     <UserControl.Resources>
         <ResourceDictionary >
             <ResourceDictionary.MergedDictionaries>
@@ -35,6 +35,8 @@
                 <Separator Style="{StaticResource VerticalSeparator}" />
                 <teamExplorer:TextLink Text="Rebase Only" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding Rebase}" />
             </WrapPanel>
+            
+            <Button Content="Cancel Operation" Margin="6,2,6,2" Command="{Binding CancelOperation}" Visibility="{Binding IsBusy, Converter={StaticResource TrueToVisibleConverter}}" />
             <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch">
                 <WrapPanel.Visibility>
                     <MultiBinding Converter="{StaticResource AnyTrueToVisibleConverter}">
@@ -72,17 +74,17 @@
             </StackPanel>
             <framework:SectionControl HeaderText="Parent Commit" IsExpanded="True" Margin="0,6,0,0" IsBusy="{Binding IsBusy}" ShowProgressWhenBusy="True"  >
                 <framework:SectionControl.Content>
-                    <DataGrid IsReadOnly="True" SelectionMode="Single" SelectedValue="{Binding SelectedCommit}"  ItemsSource="{Binding BranchCommits}" AutoGenerateColumns="False">
+                    <DataGrid IsReadOnly="True" SelectionMode="Single" SelectedValue="{Binding SelectedCommit}"  ItemsSource="{Binding BranchCommits}" AutoGenerateColumns="False" Margin="0,0,6,0">
                         <DataGrid.Columns>
                             <DataGridTextColumn MaxWidth="50" Binding="{Binding Sha, Converter={converters:PrefixValueConverter PrefixLength=6}}" Header="ID"/>
-                            <DataGridTextColumn Binding="{Binding MessageShort}" MaxWidth="250" Header="Message" />
+                            <DataGridTextColumn Binding="{Binding MessageShort}"  Width="250" Header="Message" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </framework:SectionControl.Content>
             </framework:SectionControl>
             <framework:SectionControl HeaderText="New Commit Message" IsExpanded="True" Margin="0,6,0,0" IsBusy="{Binding IsBusy}" ShowProgressWhenBusy="True" >
                 <framework:SectionControl.Content>
-                    <wpf:LabeledTextBox Row="2" Text="{Binding Path=CommitMessage, Mode=TwoWay, Delay=250}" HintText="Commit message to be used" IsReadOnly="false" IsEnabled="true" IsRequired="true" />
+                    <wpf:LabeledTextBox Row="2" Text="{Binding Path=CommitMessage, Mode=TwoWay, Delay=250}" HintText="Commit message to be used" IsReadOnly="false" IsEnabled="true" IsRequired="true" Margin="0,0,6,0" />
                 </framework:SectionControl.Content>
             </framework:SectionControl>
             <framework:SectionControl HeaderText="Rebase Branch Onto" IsExpanded="True" Margin="0,6,0,0" IsBusy="{Binding IsBusy}" ShowProgressWhenBusy="True" >

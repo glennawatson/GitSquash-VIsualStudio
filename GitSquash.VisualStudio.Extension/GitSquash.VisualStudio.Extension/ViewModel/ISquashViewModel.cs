@@ -40,6 +40,11 @@
         ICommand AbortRebase { get; }
 
         /// <summary>
+        /// Gets a command which will cancel the current operation.
+        /// </summary>
+        ICommand CancelOperation { get; }
+
+        /// <summary>
         /// Gets or sets the wrapper for the GIT squash operation.
         /// </summary>
         IGitSquashWrapper SquashWrapper { get; set; }

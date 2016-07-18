@@ -6,10 +6,11 @@ namespace GitSquash.VisualStudio
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
-    /// A wrapper around git that will provide the git squash actions.
+    /// A wrapper around git that will provide the GIT squash actions.
     /// </summary>
     public interface IGitSquashWrapper : IDisposable
     {
@@ -34,30 +35,47 @@ namespace GitSquash.VisualStudio
         /// <summary>
         /// Performs the squash action.
         /// </summary>
+        /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
         /// <param name="newCommitMessage">The new commit message for the squashed commit.</param>
         /// <param name="startCommit">The commit to start the rebase/squash from.</param>
         /// <returns>Details about the commit.</returns>
-        Task<GitCommandResponse> Squash(string newCommitMessage, GitCommit startCommit);
+        Task<GitCommandResponse> Squash(CancellationToken token, string newCommitMessage, GitCommit startCommit);
 
         /// <summary>
         /// Performs the squash action.
         /// </summary>
+        /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
         /// <param name="parentBranch">The branch parent to parent the rebase/squash from.</param>
         /// <returns>Details about the commit.</returns>
-        Task<GitCommandResponse> Rebase(GitBranch parentBranch);
+        Task<GitCommandResponse> Rebase(CancellationToken token, GitBranch parentBranch);
 
         /// <summary>
         /// Aborts a attempt to squash/rebase.
         /// </summary>
+        /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
         /// <returns>Details about the operation.</returns>
-        Task<GitCommandResponse> Abort();
+        Task<GitCommandResponse> Abort(CancellationToken token);
 
         /// <summary>
         /// Indicates we want to continue after a conflict was found.
         /// </summary>
-        /// <param name="commitMessage">The commit message.</param>
+        /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
         /// <returns>Details about the operation.</returns>
-        Task<GitCommandResponse> Continue(string commitMessage);
+        Task<GitCommandResponse> Continue(CancellationToken token);
+
+        /// <summary>
+        /// Performs a push to the GIT repository using a force.
+        /// </summary>
+        /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
+        /// <returns>Details about the operation.</returns>
+        Task<GitCommandResponse> PushForce(CancellationToken token);
+
+        /// <summary>
+        /// Fetches the origin.
+        /// </summary>
+        /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
+        /// <returns>Details about the operation.</returns>
+        Task<GitCommandResponse> FetchOrigin(CancellationToken token);
 
         /// <summary>
         /// Gets a list of remote branches.
@@ -77,18 +95,6 @@ namespace GitSquash.VisualStudio
         /// </summary>
         /// <returns>The current branch.</returns>
         GitBranch GetCurrentBranch();
-
-        /// <summary>
-        /// Performs a push to the GIT repository using a force.
-        /// </summary>
-        /// <returns>Details about the operation.</returns>
-        Task<GitCommandResponse> PushForce();
-
-        /// <summary>
-        /// Fetches the origin.
-        /// </summary>
-        /// <returns>Details about the operation.</returns>
-        Task<GitCommandResponse> FetchOrigin();
 
         /// <summary>
         /// Gets the commits for a branch.
