@@ -35,8 +35,12 @@
                 <Separator Style="{StaticResource VerticalSeparator}" />
                 <teamExplorer:TextLink Text="Rebase Only" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding Rebase}" />
             </WrapPanel>
-            
-            <Button Content="Cancel Operation" Margin="6,2,6,2" Command="{Binding CancelOperation}" Visibility="{Binding IsBusy, Converter={StaticResource TrueToVisibleConverter}}" />
+
+            <DockPanel Visibility="{Binding IsBusy, Converter={StaticResource TrueToVisibleConverter}}">
+                <wpf:TextBlockControl Text="Processing GIT Command" Margin="6,2,6,2" VerticalAlignment="Center" HorizontalAlignment="Left" Visibility="{Binding IsBusy, Converter={StaticResource TrueToVisibleConverter}}" />
+
+                <Button Content="Cancel Operation" Margin="6,2,6,2" Command="{Binding CancelOperation}" Visibility="{Binding IsBusy, Converter={StaticResource TrueToVisibleConverter}}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+            </DockPanel>
             <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch">
                 <WrapPanel.Visibility>
                     <MultiBinding Converter="{StaticResource AnyTrueToVisibleConverter}">
