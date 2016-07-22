@@ -51,21 +51,21 @@ namespace GitSquash.VisualStudio
             }
 
             var sb = new StringBuilder();
-            using (var repository = GetRepository())
+            using (Repository repository = this.GetRepository())
             {
                 foreach (Commit commit in repository.Head.Commits.TakeWhile(x => x.Sha != startCommit.Sha))
                 {
-                    sb.AppendLine(commit.Message);
+                    sb.AppendLine(commit.Message.Trim());
                 }
             }
 
-            return sb.ToString();
+            return TrimEmptyLines(sb.ToString());
         }
 
         /// <inheritdoc />
         public GitBranch GetCurrentBranch()
         {
-            using (var repository = GetRepository())
+            using (Repository repository = this.GetRepository())
             {
                 return new GitBranch(repository.Head.FriendlyName);
             }
@@ -74,7 +74,7 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public async Task<GitCommandResponse> PushForce(CancellationToken token)
         {
-            using (var repository = GetRepository())
+            using (Repository repository = this.GetRepository())
             {
                 if (repository.Head.IsTracking == false)
                 {
@@ -88,7 +88,7 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public IEnumerable<GitCommit> GetCommitsForBranch(GitBranch branch, int number = 25)
         {
-            using (var repository = GetRepository())
+            using (Repository repository = this.GetRepository())
             {
                 Branch internalBranch = repository.Branches.FirstOrDefault(x => x.FriendlyName == branch.FriendlyName);
 
@@ -112,7 +112,7 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public bool IsWorkingDirectoryDirty()
         {
-            using (var repository = GetRepository())
+            using (Repository repository = this.GetRepository())
             {
                 return repository.RetrieveStatus().IsDirty;
             }
@@ -121,7 +121,7 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public bool HasConflicts()
         {
-            using (var repository = GetRepository())
+            using (Repository repository = this.GetRepository())
             {
                 return repository.Index.IsFullyMerged == false;
             }
@@ -130,7 +130,7 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public async Task<GitCommandResponse> Squash(CancellationToken token, string newCommitMessage, GitCommit startCommit)
         {
-            using (var repository = GetRepository())
+            using (Repository repository = this.GetRepository())
             {
                 if (repository.RetrieveStatus().IsDirty)
                 {
@@ -164,7 +164,7 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public async Task<GitCommandResponse> Rebase(CancellationToken token, GitBranch parentBranch)
         {
-            using (var repository = GetRepository())
+            using (Repository repository = this.GetRepository())
             {
                 if (repository.RetrieveStatus().IsDirty)
                 {
@@ -204,10 +204,18 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public IList<GitBranch> GetBranches()
         {
-            using (var repository = GetRepository())
+            using (Repository repository = this.GetRepository())
             {
                 return repository.Branches.OrderBy(x => x.FriendlyName).Select(x => new GitBranch(x.FriendlyName)).ToList();
             }
+        }
+
+        private static string TrimEmptyLines(string input)
+        {
+            input = input.Trim('\r', '\n');
+            input = input.Trim();
+
+            return input;
         }
 
         private static Process CreateGitProcess(string arguments, string repoDirectory)
@@ -219,7 +227,7 @@ namespace GitSquash.VisualStudio
 
         private static Task<int> RunProcessAsync(Process process, CancellationToken token)
         {
-            var tcs = new TaskCompletionSource<int>();
+            TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
 
             token.Register(() =>
             {
@@ -245,7 +253,7 @@ namespace GitSquash.VisualStudio
 
         private Repository GetRepository()
         {
-            return new Repository(repoDirectory);
+            return new Repository(this.repoDirectory);
         }
 
         private bool GetWritersName(out string rebaseWriter, out string commentWriter)
