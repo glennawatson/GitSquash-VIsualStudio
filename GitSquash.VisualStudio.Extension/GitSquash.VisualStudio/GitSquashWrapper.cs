@@ -97,7 +97,7 @@ namespace GitSquash.VisualStudio
                     return Enumerable.Empty<GitCommit>();
                 }
 
-                return internalBranch.Commits.Take(number).Select(x => new GitCommit(x.Sha, x.MessageShort));
+                return internalBranch.Commits.Take(number).Select(x => new GitCommit(x.Sha, x.MessageShort)).ToList();
             }
         }
 
