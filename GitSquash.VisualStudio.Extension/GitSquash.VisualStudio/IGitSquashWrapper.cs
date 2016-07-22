@@ -8,7 +8,7 @@
     /// <summary>
     /// A wrapper around git that will provide the GIT squash actions.
     /// </summary>
-    public interface IGitSquashWrapper : IDisposable
+    public interface IGitSquashWrapper
     {
         /// <summary>
         /// Determines if there are any conflicts. 

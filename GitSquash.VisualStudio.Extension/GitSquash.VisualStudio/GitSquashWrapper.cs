@@ -1,3 +1,5 @@
+using GitSquash.VisualStudio.Properties;
+
 namespace GitSquash.VisualStudio
 {
     using System;
@@ -29,10 +31,6 @@ namespace GitSquash.VisualStudio
 
         private readonly string repoDirectory;
 
-        private readonly Repository repository;
-
-        private bool isDisposed;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="GitSquashWrapper" /> class.
         /// </summary>
@@ -42,15 +40,6 @@ namespace GitSquash.VisualStudio
         {
             this.repoDirectory = repoDirectory;
             outputLogger = logger;
-
-            this.repository = new Repository(repoDirectory);
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
         }
 
         /// <inheritdoc />
@@ -62,10 +51,12 @@ namespace GitSquash.VisualStudio
             }
 
             var sb = new StringBuilder();
-
-            foreach (Commit commit in this.repository.Head.Commits.TakeWhile(x => x.Sha != startCommit.Sha))
+            using (var repository = GetRepository())
             {
-                sb.AppendLine(commit.Message);
+                foreach (Commit commit in repository.Head.Commits.TakeWhile(x => x.Sha != startCommit.Sha))
+                {
+                    sb.AppendLine(commit.Message);
+                }
             }
 
             return sb.ToString();
@@ -74,31 +65,40 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public GitBranch GetCurrentBranch()
         {
-            return new GitBranch(this.repository.Head.FriendlyName);
+            using (var repository = GetRepository())
+            {
+                return new GitBranch(repository.Head.FriendlyName);
+            }
         }
 
         /// <inheritdoc />
         public async Task<GitCommandResponse> PushForce(CancellationToken token)
         {
-            if (this.repository.Head.IsTracking == false)
+            using (var repository = GetRepository())
             {
-                return new GitCommandResponse(false, "The branch has not been pushed before.");
-            }
+                if (repository.Head.IsTracking == false)
+                {
+                    return new GitCommandResponse(false, "The branch has not been pushed before.");
+                }
 
-            return await this.RunGit("push -f", token);
+                return await this.RunGit("push -f", token);
+            }
         }
 
         /// <inheritdoc />
         public IEnumerable<GitCommit> GetCommitsForBranch(GitBranch branch, int number = 25)
         {
-            Branch internalBranch = this.repository.Branches.FirstOrDefault(x => x.FriendlyName == branch.FriendlyName);
-
-            if (internalBranch == null)
+            using (var repository = GetRepository())
             {
-                return Enumerable.Empty<GitCommit>();
-            }
+                Branch internalBranch = repository.Branches.FirstOrDefault(x => x.FriendlyName == branch.FriendlyName);
 
-            return internalBranch.Commits.Take(number).Select(x => new GitCommit(x.Sha, x.MessageShort));
+                if (internalBranch == null)
+                {
+                    return Enumerable.Empty<GitCommit>();
+                }
+
+                return internalBranch.Commits.Take(number).Select(x => new GitCommit(x.Sha, x.MessageShort));
+            }
         }
 
         /// <inheritdoc />
@@ -112,21 +112,30 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public bool IsWorkingDirectoryDirty()
         {
-            return this.repository.RetrieveStatus().IsDirty;
+            using (var repository = GetRepository())
+            {
+                return repository.RetrieveStatus().IsDirty;
+            }
         }
 
         /// <inheritdoc />
         public bool HasConflicts()
         {
-            return this.repository.Index.IsFullyMerged == false;
+            using (var repository = GetRepository())
+            {
+                return repository.Index.IsFullyMerged == false;
+            }
         }
 
         /// <inheritdoc />
         public async Task<GitCommandResponse> Squash(CancellationToken token, string newCommitMessage, GitCommit startCommit)
         {
-            if (this.repository.RetrieveStatus().IsDirty)
+            using (var repository = GetRepository())
             {
-                return new GitCommandResponse(false, "Cannot rebase: You have unstaged changes.");
+                if (repository.RetrieveStatus().IsDirty)
+                {
+                    return new GitCommandResponse(false, "Cannot rebase: You have unstaged changes.");
+                }
             }
 
             string rewriterName;
@@ -155,9 +164,12 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public async Task<GitCommandResponse> Rebase(CancellationToken token, GitBranch parentBranch)
         {
-            if (this.repository.RetrieveStatus().IsDirty)
+            using (var repository = GetRepository())
             {
-                return new GitCommandResponse(false, "Cannot rebase: You have unstaged changes.");
+                if (repository.RetrieveStatus().IsDirty)
+                {
+                    return new GitCommandResponse(false, "Cannot rebase: You have unstaged changes.");
+                }
             }
 
             GitCommandResponse response = await this.FetchOrigin(token);
@@ -192,26 +204,10 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public IList<GitBranch> GetBranches()
         {
-            return this.repository.Branches.OrderBy(x => x.FriendlyName).Select(x => new GitBranch(x.FriendlyName)).ToList();
-        }
-
-        /// <summary>
-        /// Disposes of any objects contained in the class.
-        /// </summary>
-        /// <param name="isDisposing">If the ,method is being called by the dispose method.</param>
-        protected virtual void Dispose(bool isDisposing)
-        {
-            if (this.isDisposed)
+            using (var repository = GetRepository())
             {
-                return;
+                return repository.Branches.OrderBy(x => x.FriendlyName).Select(x => new GitBranch(x.FriendlyName)).ToList();
             }
-
-            if (isDisposing)
-            {
-                this.repository.Dispose();
-            }
-
-            this.isDisposed = true;
         }
 
         private static Process CreateGitProcess(string arguments, string repoDirectory)
@@ -228,7 +224,7 @@ namespace GitSquash.VisualStudio
             token.Register(() =>
             {
                 process.Kill();
-                outputLogger.WriteLine("Killing GIT process.");
+                outputLogger.WriteLine(Resources.KillingProcess);
             });
 
             process.Exited += (s, ea) => tcs.SetResult(process.ExitCode);
@@ -245,6 +241,11 @@ namespace GitSquash.VisualStudio
             process.BeginErrorReadLine();
 
             return tcs.Task;
+        }
+
+        private Repository GetRepository()
+        {
+            return new Repository(repoDirectory);
         }
 
         private bool GetWritersName(out string rebaseWriter, out string commentWriter)
@@ -339,7 +340,7 @@ namespace GitSquash.VisualStudio
 
             error = new StringBuilder();
             error.Append(dataReceivedEventArgs.Data);
-            outputLogger.WriteLine($"Error: {dataReceivedEventArgs.Data}");
+            outputLogger.WriteLine(string.Format(Resources.ErrorGit, dataReceivedEventArgs.Data));
         }
     }
 }
