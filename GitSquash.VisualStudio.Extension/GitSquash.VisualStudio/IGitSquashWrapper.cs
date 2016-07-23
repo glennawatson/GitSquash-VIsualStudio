@@ -1,12 +1,13 @@
 ﻿namespace GitSquash.VisualStudio
 {
-    using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
 
+    using Git.VisualStudio;
+
     /// <summary>
-    /// A wrapper around git that will provide the GIT squash actions.
+    /// A wrapper around GIT that will provide the GIT squash actions.
     /// </summary>
     public interface IGitSquashWrapper
     {

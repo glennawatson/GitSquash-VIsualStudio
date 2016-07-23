@@ -4,6 +4,8 @@
     using System.ComponentModel;
     using System.Windows.Input;
 
+    using Git.VisualStudio;
+
     /// <summary>
     /// View model for performing git squash rebase actions.
     /// </summary>

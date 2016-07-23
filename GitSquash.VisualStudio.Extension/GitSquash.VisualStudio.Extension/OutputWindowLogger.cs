@@ -2,12 +2,14 @@
 {
     using System;
 
+    using Git.VisualStudio;
+
     using Microsoft.VisualStudio.Shell.Interop;
 
     /// <summary>
     /// Outputs text to a output window.
     /// </summary>
-    public class OutputWindowLogger : IGitSquashOutputLogger
+    public class OutputWindowLogger : IOutputLogger
     {
         /// <summary>
         /// The output window pane.

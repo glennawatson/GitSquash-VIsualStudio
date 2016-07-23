@@ -1,9 +1,9 @@
-﻿namespace GitSquash.VisualStudio
+﻿namespace Git.VisualStudio
 {
     /// <summary>
     /// Represents the ability to output to the end user.
     /// </summary>
-    public interface IGitSquashOutputLogger
+    public interface IOutputLogger
     {
         /// <summary>
         /// Writes a line of text to the logger.

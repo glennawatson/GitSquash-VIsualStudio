@@ -1,7 +1,7 @@
-﻿namespace GitSquash.VisualStudio
+﻿namespace Git.VisualStudio
 {
     /// <summary>
-    /// A response after we have initiated a command to git.
+    /// A response after we have initiated a command to GIT.
     /// </summary>
     public class GitCommandResponse
     {
@@ -17,7 +17,7 @@
         }
 
         /// <summary>
-        /// Gets a value indicating whether the git command was successful.
+        /// Gets a value indicating whether the GIT command was successful.
         /// </summary>
         public bool Success { get; private set; }
 

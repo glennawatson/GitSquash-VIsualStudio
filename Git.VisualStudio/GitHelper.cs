@@ -1,7 +1,7 @@
 ﻿// <copyright file="GitHelper.cs" company="Glenn Watson">
 // Copyright (c) Glenn Watson. All rights reserved.
 // </copyright>
-namespace GitSquash.VisualStudio
+namespace Git.VisualStudio
 {
     using System;
     using System.IO;
@@ -10,7 +10,7 @@ namespace GitSquash.VisualStudio
     using Microsoft.Win32;
 
     /// <summary>
-    /// Helper class for finding details about the git installation.
+    /// Helper class for finding details about the GIT installation.
     /// </summary>
     public class GitHelper
     {

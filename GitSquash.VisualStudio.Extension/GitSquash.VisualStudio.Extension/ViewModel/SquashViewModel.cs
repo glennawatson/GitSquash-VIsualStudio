@@ -8,6 +8,8 @@
     using System.Threading.Tasks;
     using System.Windows.Input;
 
+    using Git.VisualStudio;
+
     using Microsoft.TeamFoundation.MVVM;
 
     using ViewModelBase = GalaSoft.MvvmLight.ViewModelBase;

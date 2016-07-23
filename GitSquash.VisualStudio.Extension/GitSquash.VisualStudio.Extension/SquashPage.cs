@@ -6,6 +6,9 @@
     using System.Windows;
     using System.Windows.Threading;
     using GalaSoft.MvvmLight.Command;
+
+    using Git.VisualStudio;
+
     using Microsoft.TeamFoundation.Controls;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.TeamFoundation.Git.Extensibility;

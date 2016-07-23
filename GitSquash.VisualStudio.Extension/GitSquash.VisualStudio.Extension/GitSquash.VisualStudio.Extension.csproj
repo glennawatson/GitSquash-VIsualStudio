@@ -257,6 +257,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Git.VisualStudio\Git.VisualStudio.csproj">
+      <Project>{F204EA1B-817B-4227-B653-A3F485C22800}</Project>
+      <Name>Git.VisualStudio</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\TeamExplorer.Common\TeamExplorer.Common.csproj">
       <Project>{388ac013-c628-4a32-abbc-a28a68c3a112}</Project>
       <Name>TeamExplorer.Common</Name>

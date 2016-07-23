@@ -1,17 +1,15 @@
-using GitSquash.VisualStudio.Properties;
-
 namespace GitSquash.VisualStudio
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Reflection;
-    using System.Runtime.CompilerServices;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+
+    using Git.VisualStudio;
 
     using LibGit2Sharp;
 
@@ -23,23 +21,21 @@ namespace GitSquash.VisualStudio
     [ImplementPropertyChanged]
     public class GitSquashWrapper : IGitSquashWrapper
     {
-        private static StringBuilder output = new StringBuilder();
-
-        private static StringBuilder error = new StringBuilder();
-
-        private static IGitSquashOutputLogger outputLogger;
 
         private readonly string repoDirectory;
+
+        private readonly IGitProcessManager gitProcess;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GitSquashWrapper" /> class.
         /// </summary>
         /// <param name="repoDirectory">The directory where the repository is located</param>
         /// <param name="logger">The output logger to output git transactions.</param>
-        public GitSquashWrapper(string repoDirectory, IGitSquashOutputLogger logger)
+        /// <param name="gitProcess">The git process to use.</param>
+        public GitSquashWrapper(string repoDirectory, IOutputLogger logger, IGitProcessManager gitProcess = null)
         {
             this.repoDirectory = repoDirectory;
-            outputLogger = logger;
+            this.gitProcess = gitProcess ?? new GitProcessManager(repoDirectory, logger);
         }
 
         /// <inheritdoc />
@@ -81,7 +77,7 @@ namespace GitSquash.VisualStudio
                     return new GitCommandResponse(false, "The branch has not been pushed before.");
                 }
 
-                return await this.RunGit("push -f", token);
+                return await this.gitProcess.RunGit("push -f", token);
             }
         }
 
@@ -150,13 +146,13 @@ namespace GitSquash.VisualStudio
 
             var environmentVariables = new Dictionary<string, string> { { "COMMENT_FILE_NAME", fileName } };
 
-            return await this.RunGit($"-c core.quotepath=false -c \"sequence.editor=\'{rewriterName}\'\" -c \"core.editor=\'{commentWriterName}\'\" rebase -i  {startCommit.Sha}", token, environmentVariables);
+            return await this.gitProcess.RunGit($"-c core.quotepath=false -c \"sequence.editor=\'{rewriterName}\'\" -c \"core.editor=\'{commentWriterName}\'\" rebase -i  {startCommit.Sha}", token, environmentVariables);
         }
 
         /// <inheritdoc />
         public Task<GitCommandResponse> FetchOrigin(CancellationToken token)
         {
-            Task<GitCommandResponse> response = this.RunGit("fetch -v origin", token);
+            Task<GitCommandResponse> response = this.gitProcess.RunGit("fetch -v origin", token);
 
             return response;
         }
@@ -179,13 +175,13 @@ namespace GitSquash.VisualStudio
                 return response;
             }
 
-            return await this.RunGit($"rebase  {parentBranch.FriendlyName}", token);
+            return await this.gitProcess.RunGit($"rebase  {parentBranch.FriendlyName}", token);
         }
 
         /// <inheritdoc />
         public Task<GitCommandResponse> Abort(CancellationToken token)
         {
-            return this.RunGit("rebase --abort", token);
+            return this.gitProcess.RunGit("rebase --abort", token);
         }
 
         /// <inheritdoc />
@@ -198,7 +194,7 @@ namespace GitSquash.VisualStudio
                 return new GitCommandResponse(false, "Cannot get valid paths to GIT parameters");
             }
 
-            return await this.RunGit($"-c core.quotepath=false -c \"core.editor=\'{commentWriterName}\'\"  rebase --continue", token);
+            return await this.gitProcess.RunGit($"-c core.quotepath=false -c \"core.editor=\'{commentWriterName}\'\"  rebase --continue", token);
         }
 
         /// <inheritdoc />
@@ -218,38 +214,6 @@ namespace GitSquash.VisualStudio
             return input;
         }
 
-        private static Process CreateGitProcess(string arguments, string repoDirectory)
-        {
-            string gitInstallationPath = GitHelper.GetGitInstallationPath();
-            string pathToGit = Path.Combine(Path.Combine(gitInstallationPath, "bin\\git.exe"));
-            return new Process { StartInfo = { CreateNoWindow = true, UseShellExecute = false, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, FileName = pathToGit, Arguments = arguments, WorkingDirectory = repoDirectory }, EnableRaisingEvents = true };
-        }
-
-        private static Task<int> RunProcessAsync(Process process, CancellationToken token)
-        {
-            TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
-
-            token.Register(() =>
-            {
-                process.Kill();
-                outputLogger.WriteLine(Resources.KillingProcess);
-            });
-
-            process.Exited += (s, ea) => tcs.SetResult(process.ExitCode);
-
-            bool started = process.Start();
-            if (!started)
-            {
-                // you may allow for the process to be re-used (started = false) 
-                // but I'm not sure about the guarantees of the Exited event in such a case
-                throw new InvalidOperationException("Could not start process: " + process);
-            }
-
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-
-            return tcs.Task;
-        }
 
         private Repository GetRepository()
         {
@@ -290,65 +254,6 @@ namespace GitSquash.VisualStudio
             {
                 return false;
             }
-        }
-
-        private async Task<GitCommandResponse> RunGit(string gitArguments, CancellationToken token, IDictionary<string, string> extraEnvironmentVariables = null, [CallerMemberName] string callerMemberName = null)
-        {
-            outputLogger.WriteLine($"execute: git {gitArguments}");
-            error = new StringBuilder();
-            output = new StringBuilder();
-
-            using (Process process = CreateGitProcess(gitArguments, this.repoDirectory))
-            {
-                if (extraEnvironmentVariables != null)
-                {
-                    foreach (KeyValuePair<string, string> kvp in extraEnvironmentVariables)
-                    {
-                        process.StartInfo.EnvironmentVariables.Add(kvp.Key, kvp.Value);
-                    }
-                }
-
-                process.ErrorDataReceived += this.OnErrorReceived;
-                process.OutputDataReceived += this.OnOutputDataReceived;
-
-                int returnValue = await RunProcessAsync(process, token);
-
-                if (returnValue == 1)
-                {
-                    return new GitCommandResponse(false, $"{callerMemberName} failed. See output window.");
-                }
-
-                return new GitCommandResponse(true, $"{callerMemberName} succeeded.");
-            }
-        }
-
-        private void OnOutputDataReceived(object sender, DataReceivedEventArgs dataReceivedEventArgs)
-        {
-            if (dataReceivedEventArgs.Data == null)
-            {
-                return;
-            }
-
-            output.Append(dataReceivedEventArgs.Data);
-            outputLogger.WriteLine(dataReceivedEventArgs.Data);
-        }
-
-        private void OnErrorReceived(object sender, DataReceivedEventArgs dataReceivedEventArgs)
-        {
-            if (dataReceivedEventArgs.Data == null)
-            {
-                return;
-            }
-
-            if (!dataReceivedEventArgs.Data.StartsWith("fatal:", StringComparison.OrdinalIgnoreCase))
-            {
-                outputLogger.WriteLine(dataReceivedEventArgs.Data);
-                return;
-            }
-
-            error = new StringBuilder();
-            error.Append(dataReceivedEventArgs.Data);
-            outputLogger.WriteLine(string.Format(Resources.ErrorGit, dataReceivedEventArgs.Data));
         }
     }
 }
