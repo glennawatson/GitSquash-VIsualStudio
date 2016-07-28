@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.Linq;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Input;
@@ -412,19 +413,33 @@
             }
 
             forcePushOutput = null;
-            if (!this.ForcePush)
+            if (this.ForcePush)
             {
-                return new GitCommandResponse(true, $"{rebaseOutput?.CommandOutput}\r\n{squashOutput.CommandOutput}\r\n{forcePushOutput.CommandOutput}");
+                forcePushOutput = await this.SquashWrapper.PushForce(token);
+
+                if (forcePushOutput.Success == false || token.IsCancellationRequested)
+                {
+                    return forcePushOutput;
+                }
             }
 
-            forcePushOutput = await this.SquashWrapper.PushForce(token);
-
-            if (forcePushOutput.Success == false || token.IsCancellationRequested)
+            StringBuilder sb = new StringBuilder();
+            if (squashOutput != null && squashOutput.Success)
             {
-                return forcePushOutput;
+                sb.AppendLine(squashOutput.CommandOutput);
             }
 
-            return new GitCommandResponse(true, $"{rebaseOutput?.CommandOutput}\r\n{squashOutput.CommandOutput}\r\n{forcePushOutput?.CommandOutput}");
+            if (forcePushOutput != null && forcePushOutput.Success)
+            {
+                sb.AppendLine(forcePushOutput.CommandOutput);
+            }
+
+            if (rebaseOutput != null && rebaseOutput.Success)
+            {
+                sb.AppendLine(rebaseOutput.CommandOutput);
+            }
+
+            return new GitCommandResponse(true, sb.ToString());
         }
 
         private Task<GitCommandResponse> PerformRebase(CancellationToken token)
