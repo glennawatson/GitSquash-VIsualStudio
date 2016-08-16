@@ -442,9 +442,33 @@
             return new GitCommandResponse(true, sb.ToString());
         }
 
-        private Task<GitCommandResponse> PerformRebase(CancellationToken token)
+        private async Task<GitCommandResponse> PerformRebase(CancellationToken token)
         {
-            return this.SquashWrapper.Rebase(token, this.SelectedRebaseBranch);
+            var rebaseOutput = await this.SquashWrapper.Rebase(token, this.SelectedRebaseBranch);
+
+            GitCommandResponse forcePushOutput = null;
+            if (this.ForcePush)
+            {
+                forcePushOutput = await this.SquashWrapper.PushForce(token);
+
+                if (forcePushOutput.Success == false || token.IsCancellationRequested)
+                {
+                    return forcePushOutput;
+                }
+            }
+
+            StringBuilder sb = new StringBuilder();
+            if (rebaseOutput != null && rebaseOutput.Success)
+            {
+                sb.AppendLine(rebaseOutput.CommandOutput);
+            }
+
+            if (forcePushOutput != null && forcePushOutput.Success)
+            {
+                sb.AppendLine(forcePushOutput.CommandOutput);
+            }
+
+            return new GitCommandResponse(true, sb.ToString());
         }
 
         private Task<GitCommandResponse> PerformAbortRebase(CancellationToken token)
