@@ -65,11 +65,11 @@
             </WrapPanel>
             <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch" Visibility="{Binding OperationSuccess, Converter={StaticResource FalseToVisibleConverter}, FallbackValue=Visibility.Collapsed}">
                 <Rectangle Margin="2,0,4,2" Width="14" Height="14" Fill="{StaticResource WarningIconBrush}" />
-                <wpf:TextBlockControl Text="{Binding GitCommandResponse.CommandOutput}" Margin="2,0,4,2"  />
+                <wpf:TextBlockControl Text="{Binding GitCommandResponse.OutputMessage}" Margin="2,0,4,2"  />
             </WrapPanel>
             <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch" Visibility="{Binding OperationSuccess, Converter={StaticResource TrueToVisibleConverter}, FallbackValue=Visibility.Collapsed}">
                 <Rectangle Margin="2,0,4,2" Width="14" Height="14" Fill="{StaticResource InformationIconBrush}" />
-                <wpf:TextBlockControl Text="{Binding GitCommandResponse.CommandOutput}" Margin="2,0,4,2"  />
+                <wpf:TextBlockControl Text="{Binding GitCommandResponse.OutputMessage}" Margin="2,0,4,2"  />
             </WrapPanel>
 
             <StackPanel Orientation="Horizontal">

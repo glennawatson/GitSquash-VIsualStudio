@@ -1,4 +1,4 @@
-﻿namespace GitSquash.VisualStudio
+﻿namespace Git.VisualStudio
 {
     using System;
     using System.Diagnostics;
@@ -13,15 +13,22 @@
         /// Initializes a new instance of the <see cref="GitBranch"/> class.
         /// </summary>
         /// <param name="friendlyName">A human friendly name of the branch.</param>
-        public GitBranch(string friendlyName)
+        /// <param name="isRemote">If the branch is remote or not.</param>
+        public GitBranch(string friendlyName, bool isRemote)
         {
             this.FriendlyName = friendlyName;
+            this.IsRemote = isRemote;
         }
 
         /// <summary>
         /// Gets the description of the branch.
         /// </summary>
         public string FriendlyName { get;  }
+
+        /// <summary>
+        /// Gets a value indicating whether the branch is remote.
+        /// </summary>
+        public bool IsRemote { get; }
 
         /// <summary>
         /// Operator for equality.

@@ -5,6 +5,7 @@
     using System.Diagnostics;
     using System.IO;
     using System.Runtime.CompilerServices;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -37,10 +38,16 @@
         /// <param name="token">A cancellation token with the ability to cancel the process.</param>
         /// <param name="extraEnvironmentVariables">Any environment variables to pass for the process.</param>
         /// <param name="callerMemberName">The member calling the process.</param>
+        /// <param name="includeStandardArguments">If to include standard arguments useful in a script environment.</param>
         /// <returns>A task which will return the response from the GIT process.</returns>
-        public async Task<GitCommandResponse> RunGit(string gitArguments, CancellationToken token, IDictionary<string, string> extraEnvironmentVariables = null, [CallerMemberName] string callerMemberName = null)
+        public async Task<GitCommandResponse> RunGit(string gitArguments, CancellationToken token, IDictionary<string, string> extraEnvironmentVariables = null, [CallerMemberName] string callerMemberName = null, bool includeStandardArguments = true)
         {
-            outputLogger.WriteLine($"execute: git {gitArguments}");
+            if (includeStandardArguments)
+            {
+                gitArguments = $"--no-pager -c color.branch=false -c color.diff=false -c color.status=false -c diff.mnemonicprefix=false -c core.quotepath=false {gitArguments}";
+            }
+
+            outputLogger?.WriteLine($"execute: git {gitArguments}");
 
             using (Process process = CreateGitProcess(gitArguments, this.repoDirectory))
             {
@@ -52,17 +59,19 @@
                     }
                 }
 
-                process.ErrorDataReceived += this.OnErrorReceived;
-                process.OutputDataReceived += this.OnOutputDataReceived;
+                StringBuilder output = new StringBuilder();
+
+                process.ErrorDataReceived += (sender, e) => this.OnErrorReceived(e, output);
+                process.OutputDataReceived += (sender, e) => this.OnOutputDataReceived(e, output);
 
                 int returnValue = await RunProcessAsync(process, token);
 
-                if (returnValue == 1)
+                if (returnValue != 0)
                 {
-                    return new GitCommandResponse(false, $"{callerMemberName} failed. See output window.");
+                    return new GitCommandResponse(false, $"{callerMemberName} failed. See output window.", output.ToString(), returnValue);
                 }
 
-                return new GitCommandResponse(true, $"{callerMemberName} succeeded.");
+                return new GitCommandResponse(true, $"{callerMemberName} succeeded.", output.ToString(), returnValue);
             }
         }
 
@@ -70,21 +79,26 @@
         {
             string gitInstallationPath = GitHelper.GetGitInstallationPath();
             string pathToGit = Path.Combine(Path.Combine(gitInstallationPath, "bin\\git.exe"));
-            return new Process { StartInfo = { CreateNoWindow = true, UseShellExecute = false, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true, FileName = pathToGit, Arguments = arguments, WorkingDirectory = repoDirectory }, EnableRaisingEvents = true };
+            return new Process
+            {
+                StartInfo =
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    FileName = pathToGit,
+                    Arguments = arguments,
+                    WorkingDirectory = repoDirectory,
+                    StandardErrorEncoding = Encoding.UTF8,
+                    StandardOutputEncoding = Encoding.UTF8
+                }, EnableRaisingEvents = true
+            };
         }
 
         private static Task<int> RunProcessAsync(Process process, CancellationToken token)
         {
-            TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
-
-            token.Register(() =>
-            {
-                process.Kill();
-                outputLogger.WriteLine(Resources.KillingProcess);
-            });
-
-            process.Exited += (s, ea) => tcs.SetResult(process.ExitCode);
-
             bool started = process.Start();
             if (!started)
             {
@@ -96,33 +110,41 @@
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            return tcs.Task;
+            return Task.Run(
+                () =>
+                    {
+                        process.WaitForExit();
+                        return process.ExitCode;
+                    }, 
+                token);
         }
 
-        private void OnOutputDataReceived(object sender, DataReceivedEventArgs dataReceivedEventArgs)
+        private void OnOutputDataReceived(DataReceivedEventArgs e, StringBuilder sb)
         {
-            if (dataReceivedEventArgs.Data == null)
+            if (e.Data == null)
             {
                 return;
             }
 
-            outputLogger.WriteLine(dataReceivedEventArgs.Data);
+            sb.AppendLine(e.Data);
+            outputLogger?.WriteLine(e.Data);
         }
 
-        private void OnErrorReceived(object sender, DataReceivedEventArgs dataReceivedEventArgs)
+        private void OnErrorReceived(DataReceivedEventArgs e, StringBuilder sb)
         {
-            if (dataReceivedEventArgs.Data == null)
+            if (e.Data == null)
             {
                 return;
             }
 
-            if (!dataReceivedEventArgs.Data.StartsWith("fatal:", StringComparison.OrdinalIgnoreCase))
+            if (!e.Data.StartsWith("fatal:", StringComparison.OrdinalIgnoreCase))
             {
-                outputLogger.WriteLine(dataReceivedEventArgs.Data);
+                outputLogger?.WriteLine(e.Data);
+                sb.AppendLine(e.Data);
                 return;
             }
 
-            outputLogger.WriteLine(string.Format(Resources.ErrorRunningGit, dataReceivedEventArgs.Data));
+            outputLogger?.WriteLine(string.Format(Resources.ErrorRunningGit, e.Data));
         }
     }
 }

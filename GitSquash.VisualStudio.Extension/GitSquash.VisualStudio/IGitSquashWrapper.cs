@@ -14,8 +14,9 @@
         /// <summary>
         /// Determines if there are any conflicts. 
         /// </summary>
+        /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
         /// <returns>True if there is a conflict, false otherwise.</returns>
-        bool HasConflicts();
+        Task<bool> HasConflicts(CancellationToken token);
 
         /// <summary>
         /// Determines if there is currently a rebase in operation.
@@ -26,8 +27,9 @@
         /// <summary>
         /// Determines if the working directory is dirty or not.
         /// </summary>
+        /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
         /// <returns>True if the working directory is dirty, false otherwise.</returns>
-        bool IsWorkingDirectoryDirty();
+        Task<bool> IsWorkingDirectoryDirty(CancellationToken token);
 
         /// <summary>
         /// Performs the squash action.
@@ -77,28 +79,32 @@
         /// <summary>
         /// Gets a list of remote branches.
         /// </summary>
+        /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
         /// <returns>The remote branches.</returns>
-        IList<GitBranch> GetBranches();
+        Task<IList<GitBranch>> GetBranches(CancellationToken token);
 
         /// <summary>
         /// Gets the commit message since the parent branch.
         /// </summary>
         /// <param name="startCommit">The start commit.</param>
+        /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
         /// <returns>All the commit messages</returns>
-        string GetCommitMessages(GitCommit startCommit);
+        Task<string> GetCommitMessages(GitCommit startCommit, CancellationToken token);
 
         /// <summary>
         /// Gets the current branch of the repository.
         /// </summary>
+        /// <param name="token">The cancellation token able to cancel the task.</param>
         /// <returns>The current branch.</returns>
-        GitBranch GetCurrentBranch();
+        Task<GitBranch> GetCurrentBranch(CancellationToken token);
 
         /// <summary>
         /// Gets the commits for a branch.
         /// </summary>
         /// <param name="branch">The branch to get the details for.</param>
+        /// <param name="token">The cancellation token able to cancel the task.</param>
         /// <param name="number">The number of commits to retrieve for.</param>
         /// <returns>A collection of commits.</returns>
-        IEnumerable<GitCommit> GetCommitsForBranch(GitBranch branch, int number = 25);
+        Task<IList<GitCommit>> GetCommitsForBranch(GitBranch branch, CancellationToken token, int number = 25);
     }
 }

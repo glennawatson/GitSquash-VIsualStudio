@@ -5,14 +5,16 @@
     using System.IO;
     using System.Windows;
     using System.Windows.Threading;
-    using GalaSoft.MvvmLight.Command;
 
     using Git.VisualStudio;
 
     using Microsoft.TeamFoundation.Controls;
+    using Microsoft.TeamFoundation.MVVM;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.TeamFoundation.Git.Extensibility;
+
     using TeamExplorer.Common;
+
     using View;
     using ViewModel;
 

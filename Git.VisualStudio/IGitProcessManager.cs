@@ -17,7 +17,8 @@
         /// <param name="token">A cancellation token to allow for process cancellation.</param>
         /// <param name="extraEnvironmentVariables">Environment variables to pass.</param>
         /// <param name="callerMemberName">The caller of the process.</param>
+        /// <param name="includeStandardArguments">Include standard git arguments to make it work nicer with this tool.</param>
         /// <returns>A task which will return the exit code from GIT.</returns>
-        Task<GitCommandResponse> RunGit(string gitArguments, CancellationToken token, IDictionary<string, string> extraEnvironmentVariables = null, [CallerMemberName] string callerMemberName = null);
+        Task<GitCommandResponse> RunGit(string gitArguments, CancellationToken token, IDictionary<string, string> extraEnvironmentVariables = null, [CallerMemberName] string callerMemberName = null, bool includeStandardArguments = true);
     }
 }
