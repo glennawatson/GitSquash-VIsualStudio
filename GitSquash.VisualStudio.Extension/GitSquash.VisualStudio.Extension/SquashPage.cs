@@ -1,20 +1,19 @@
-﻿namespace GitSquash.VisualStudio.Extension
+﻿
+namespace GitSquash.VisualStudio.Extension
 {
     using System;
     using System.ComponentModel.Composition;
     using System.IO;
+    using System.Reactive.Concurrency;
     using System.Windows;
     using System.Windows.Threading;
-
     using Git.VisualStudio;
-
     using Microsoft.TeamFoundation.Controls;
     using Microsoft.TeamFoundation.MVVM;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.TeamFoundation.Git.Extensibility;
-
+    using ReactiveUI;
     using TeamExplorer.Common;
-
     using View;
     using ViewModel;
 
@@ -80,7 +79,7 @@
         /// <inheritdoc />
         public override void Refresh()
         {
-            this.view.ViewModel.Refresh();
+            RxApp.MainThreadScheduler.Schedule(() => { this.view.ViewModel.Refresh(); });
         }
 
         private static bool AreGitToolsInstalled()
@@ -97,7 +96,8 @@
             RelayCommand showConflicts = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitConflicts));
             RelayCommand showChanges = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitChanges));
             IGitSquashWrapper squashWrapper = this.GetService<IGitSquashWrapper>();
-            this.view.ViewModel = new SquashViewModel(squashWrapper, showBranches, showConflicts, showChanges);
+
+            RxApp.MainThreadScheduler.Schedule(() => { this.view.ViewModel = new SquashViewModel(squashWrapper, showBranches, showConflicts, showChanges); });
         }
     }
 }

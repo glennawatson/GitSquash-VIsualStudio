@@ -20,7 +20,7 @@
 
         private readonly ICommand updateCommitMessage;
 
-        private readonly ObservableAsPropertyHelper<bool> isOperationSuccess;
+        private readonly ObservableAsPropertyHelper<bool?> isOperationSuccess;
 
         private bool applyRebase = true;
 
@@ -87,7 +87,7 @@
             this.ViewConflictsPage = showConflicts;
             this.ViewChangesPage = showChanges;
 
-            this.isOperationSuccess = this.WhenAnyValue(x => x.GitCommandResponse).Select(x => x != null && x.Success).ToProperty(this, x => x.OperationSuccess, out this.isOperationSuccess);
+            this.isOperationSuccess = this.WhenAnyValue(x => x.GitCommandResponse).Select(x => x?.Success).ToProperty(this, x => x.OperationSuccess, out this.isOperationSuccess);
 
             var canSquashObservable = this.WhenAnyValue(x => x.CurrentBranch, x => x.SquashWrapper, x => x.SelectedCommit, x => x.CommitMessage, x => x.IsBusy, x => x.IsDirty)
                 .Select(x => x.Item1 != null && x.Item2 != null && x.Item3 != null && string.IsNullOrWhiteSpace(x.Item4) == false && x.Item5 == false && x.Item6 == false);
@@ -107,7 +107,7 @@
             this.AbortRebase = ReactiveCommand.CreateAsyncTask(canContinueRebase, async _ => await this.ExecuteGitBackground(this.PerformAbortRebase));
             this.PushForce = ReactiveCommand.CreateAsyncTask(async _ => await this.ExecuteGitBackground(this.PerformPushForce));
             this.FetchOrigin = ReactiveCommand.CreateAsyncTask(async _ => await this.ExecuteGitBackground(this.PerformFetchOrigin));
-            this.updateCommitMessage = ReactiveCommand.CreateAsyncTask(async _ => await this.ExecuteBackground(this.PerformUpdateCommitMessage));
+            this.updateCommitMessage = ReactiveCommand.CreateAsyncTask(async _ => await this.PerformUpdateCommitMessage(CancellationToken.None));
 
             this.WhenAnyValue(x => x.SelectedCommit).InvokeCommand(this.updateCommitMessage);
         }
@@ -310,7 +310,7 @@
         }
 
         /// <inheritdoc />
-        public bool OperationSuccess => this.isOperationSuccess.Value;
+        public bool? OperationSuccess => this.isOperationSuccess.Value;
 
         /// <inheritdoc />
         public bool IsDirty
@@ -427,7 +427,7 @@
             }
         }
 
-        private async Task ExecuteBackground(Func<CancellationToken, Task> func)
+        private async Task ExecuteBackground(Func<CancellationToken, Task> func, bool performRefresh = false)
         {
             this.IsBusy = true;
             try
@@ -442,7 +442,12 @@
 
                 this.TokenSource = new CancellationTokenSource();
                 await func(this.tokenSource.Token);
-                this.Refresh();
+
+                if (performRefresh)
+                {
+                    this.Refresh();
+                }
+
                 this.TokenSource = null;
             }
             catch (Exception ex)

@@ -130,7 +130,7 @@
         /// <summary>
         /// Gets a value indicating whether the previous operation success.
         /// </summary>
-        bool OperationSuccess { get; }
+        bool? OperationSuccess { get; }
 
         /// <summary>
         /// Gets a value indicating whether the git process is currently busy.
