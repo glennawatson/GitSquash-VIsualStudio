@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.ComponentModel;
     using System.Linq;
     using System.Reactive.Linq;
     using System.Text;
@@ -18,6 +17,10 @@
     public class SquashViewModel : ReactiveObject, ISquashViewModel
     {
         private readonly ICommand refresh;
+
+        private readonly ICommand updateCommitMessage;
+
+        private readonly ObservableAsPropertyHelper<bool> isOperationSuccess;
 
         private bool applyRebase = true;
 
@@ -80,13 +83,14 @@
 
             this.SquashWrapper = squashWrapper;
             this.ChangeBranch = changeBranch;
+
             this.ViewConflictsPage = showConflicts;
             this.ViewChangesPage = showChanges;
 
-            this.PropertyChanged += this.OnPropertyChanged;
+            this.isOperationSuccess = this.WhenAnyValue(x => x.GitCommandResponse).Select(x => x != null && x.Success).ToProperty(this, x => x.OperationSuccess, out this.isOperationSuccess);
 
-            var canSquashObservable = this.WhenAnyValue(x => x.CurrentBranch, x => x.SquashWrapper, x => x.SelectedCommit, x => x.CommitMessage, x => x.IsBusy)
-                .Select(x => x.Item1 != null && x.Item2 != null && x.Item3 != null && string.IsNullOrWhiteSpace(x.Item4) == false && x.Item5 == false);
+            var canSquashObservable = this.WhenAnyValue(x => x.CurrentBranch, x => x.SquashWrapper, x => x.SelectedCommit, x => x.CommitMessage, x => x.IsBusy, x => x.IsDirty)
+                .Select(x => x.Item1 != null && x.Item2 != null && x.Item3 != null && string.IsNullOrWhiteSpace(x.Item4) == false && x.Item5 == false && x.Item6 == false);
             var canRebase = this.WhenAnyValue(x => x.IsRebaseInProgress, x => x.IsDirty, x => x.IsBusy, x => x.SelectedRebaseBranch)
                 .Select(x => x.Item1 == false && x.Item2 == false && x.Item3 == false && x.Item4 != null);
             var canCancel = this.WhenAnyValue(x => x.TokenSource).Select(x => x != null);
@@ -101,6 +105,11 @@
             this.refresh = ReactiveCommand.CreateAsyncTask(async _ => await this.RefreshInternal());
             this.ContinueRebase = ReactiveCommand.CreateAsyncTask(canContinueRebase, async _ => await this.ExecuteGitBackground(this.PerformContinueRebase));
             this.AbortRebase = ReactiveCommand.CreateAsyncTask(canContinueRebase, async _ => await this.ExecuteGitBackground(this.PerformAbortRebase));
+            this.PushForce = ReactiveCommand.CreateAsyncTask(async _ => await this.ExecuteGitBackground(this.PerformPushForce));
+            this.FetchOrigin = ReactiveCommand.CreateAsyncTask(async _ => await this.ExecuteGitBackground(this.PerformFetchOrigin));
+            this.updateCommitMessage = ReactiveCommand.CreateAsyncTask(async _ => await this.ExecuteBackground(this.PerformUpdateCommitMessage));
+
+            this.WhenAnyValue(x => x.SelectedCommit).InvokeCommand(this.updateCommitMessage);
         }
 
         /// <inheritdoc />
@@ -123,6 +132,12 @@
 
         /// <inheritdoc />
         public ICommand CancelOperation { get; }
+
+        /// <inheritdoc />
+        public ICommand PushForce { get; }
+
+        /// <inheritdoc />
+        public ICommand FetchOrigin { get; }
 
         /// <summary>
         /// Gets or sets the token source.
@@ -291,12 +306,11 @@
             set
             {
                 this.RaiseAndSetIfChanged(ref this.gitCommandResponse, value);
-                this.RaisePropertyChanged(nameof(this.OperationSuccess));
             }
         }
 
         /// <inheritdoc />
-        public bool? OperationSuccess => this.GitCommandResponse?.Success;
+        public bool OperationSuccess => this.isOperationSuccess.Value;
 
         /// <inheritdoc />
         public bool IsDirty
@@ -413,6 +427,56 @@
             }
         }
 
+        private async Task ExecuteBackground(Func<CancellationToken, Task> func)
+        {
+            this.IsBusy = true;
+            try
+            {
+                try
+                {
+                    this.TokenSource?.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+
+                this.TokenSource = new CancellationTokenSource();
+                await func(this.tokenSource.Token);
+                this.Refresh();
+                this.TokenSource = null;
+            }
+            catch (Exception ex)
+            {
+                this.GitCommandResponse = new GitCommandResponse(false, ex.Message, null, 0);
+            }
+            finally
+            {
+                this.IsBusy = false;
+            }
+        }
+
+        private async Task<GitCommandResponse> PerformPushForce(CancellationToken token)
+        {
+            if (token.IsCancellationRequested)
+            {
+                return null;
+            }
+
+            GitCommandResponse forcePushOutput = await this.SquashWrapper.PushForce(token);
+            return forcePushOutput;
+        }
+
+        private async Task<GitCommandResponse> PerformFetchOrigin(CancellationToken token)
+        {
+            if (token.IsCancellationRequested)
+            {
+                return null;
+            }
+
+            GitCommandResponse result = await this.SquashWrapper.FetchOrigin(token);
+            return result;
+        }
+
         private async Task<GitCommandResponse> PerformSquash(CancellationToken token)
         {
             GitCommandResponse squashOutput = await this.SquashWrapper.Squash(token, this.CommitMessage, this.SelectedCommit);
@@ -422,15 +486,10 @@
                 return squashOutput;
             }
 
-            GitCommandResponse forcePushOutput;
+            GitCommandResponse forcePushOutput = null;
             if (this.ForcePush)
             {
-                forcePushOutput = await this.SquashWrapper.PushForce(token);
-
-                if (forcePushOutput.Success == false || token.IsCancellationRequested)
-                {
-                    return forcePushOutput;
-                }
+                forcePushOutput = await this.PerformPushForce(token);
             }
 
             GitCommandResponse rebaseOutput = null;
@@ -445,15 +504,9 @@
                 }
             }
 
-            forcePushOutput = null;
-            if (this.ForcePush)
+            if (this.ApplyRebase && this.ForcePush)
             {
-                forcePushOutput = await this.SquashWrapper.PushForce(token);
-
-                if (forcePushOutput.Success == false || token.IsCancellationRequested)
-                {
-                    return forcePushOutput;
-                }
+                forcePushOutput = await this.PerformPushForce(token);
             }
 
             StringBuilder sb = new StringBuilder();
@@ -514,19 +567,9 @@
             return this.SquashWrapper.Continue(token);
         }
 
-        private async Task UpdateCommitMessage(GitCommit commit)
+        private async Task PerformUpdateCommitMessage(CancellationToken token)
         {
-            this.CommitMessage = await this.SquashWrapper?.GetCommitMessages(commit, CancellationToken.None);
-        }
-
-        private async void OnPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            switch (e.PropertyName)
-            {
-                case "SelectedCommit":
-                    await this.UpdateCommitMessage(this.SelectedCommit);
-                    break;
-            }
+            this.CommitMessage = await this.SquashWrapper.GetCommitMessages(this.SelectedCommit, token);
         }
     }
 }
