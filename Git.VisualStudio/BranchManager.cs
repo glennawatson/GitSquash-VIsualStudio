@@ -142,7 +142,7 @@
 
             IList<GitCommit> results = ConvertStringToGitCommits(lines);
 
-            return results;
+            return results.OrderBy(x => x.DateTime).ToList();
         }
 
         /// <inheritdoc />
@@ -244,6 +244,13 @@
         {
             StringBuilder arguments = new StringBuilder();
 
+            arguments.Append($"{revisionRange} ");
+
+            if (branch != null)
+            {
+                arguments.Append($"--branches={branch.FriendlyName} ");
+            }
+
             if (skip > 0)
             {
                 arguments.Append($" --skip={skip}");
@@ -253,8 +260,6 @@
             {
                 arguments.Append($" --max-count={limit}");
             }
-
-            arguments.Append(branch != null ? $" --branches={branch.FriendlyName}" : " --branches --tags");
 
             arguments.Append(" --full-history");
 
@@ -275,7 +280,6 @@
             arguments.Append(" --decorate=full");
             arguments.Append(" --date=iso");
 
-            arguments.Append($" {revisionRange} --");
             StringBuilder ignoreBranches = new StringBuilder("--not ");
 
             if (logOptions.HasFlag(GitLogOptions.BranchOnlyAndParent))
