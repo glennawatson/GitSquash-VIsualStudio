@@ -278,9 +278,9 @@
             arguments.Append($" {revisionRange} --");
             StringBuilder ignoreBranches = new StringBuilder("--not ");
 
-            if (!logOptions.HasFlag(GitLogOptions.BranchOnlyAndParent))
+            if (logOptions.HasFlag(GitLogOptions.BranchOnlyAndParent))
             {
-                var branches = await this.GetLocalAndRemoteBranches(token);
+                var branches = await this.GetLocalBranches(token);
 
                 foreach (var testBranch in branches)
                 {
@@ -289,8 +289,9 @@
                         ignoreBranches.Append($"{testBranch.FriendlyName} ");
                     }
                 }
+
+                arguments.Append($" {ignoreBranches} -- ");
             }
-            arguments.Append(ignoreBranches + "-- ");
 
             return arguments.ToString();
         }
