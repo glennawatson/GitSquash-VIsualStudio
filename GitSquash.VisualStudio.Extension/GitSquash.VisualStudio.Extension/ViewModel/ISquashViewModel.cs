@@ -85,7 +85,7 @@
         /// Gets or sets a value indicating whether we are going to do a force
         /// push once the rebase/squash has finished.
         /// </summary>
-        bool ForcePush { get; set; }
+        bool DoForcePush { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether there is currently a rebase in operation.

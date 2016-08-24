@@ -344,7 +344,7 @@
         }
 
         /// <inheritdoc />
-        public bool ForcePush
+        public bool DoForcePush
         {
             get
             {
@@ -492,7 +492,7 @@
             }
 
             GitCommandResponse forcePushOutput = null;
-            if (this.ForcePush)
+            if (this.DoForcePush)
             {
                 forcePushOutput = await this.PerformPushForce(token);
             }
@@ -509,7 +509,7 @@
                 }
             }
 
-            if (this.ApplyRebase && this.ForcePush)
+            if (this.ApplyRebase && this.DoForcePush)
             {
                 forcePushOutput = await this.PerformPushForce(token);
             }
@@ -538,7 +538,7 @@
             var rebaseOutput = await this.SquashWrapper.Rebase(token, this.SelectedRebaseBranch);
 
             GitCommandResponse forcePushOutput = null;
-            if (this.ForcePush)
+            if (this.DoForcePush)
             {
                 forcePushOutput = await this.SquashWrapper.PushForce(token);
 

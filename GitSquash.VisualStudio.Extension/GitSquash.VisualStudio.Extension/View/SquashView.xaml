@@ -35,7 +35,7 @@
                 <Separator Style="{StaticResource VerticalSeparator}" />
                 <teamExplorer:TextLink Text="Rebase Only" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding Rebase}" />
                 <Separator Style="{StaticResource VerticalSeparator}" />
-                <teamExplorer:TextLink Text="Push (Force)" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding ForcePush}" />
+                <teamExplorer:TextLink Text="Push (Force)" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding PushForce}" />
                 <Separator Style="{StaticResource VerticalSeparator}" />
                 <teamExplorer:TextLink Text="Fetch Origin" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding FetchOrigin}" />
             </WrapPanel>
@@ -106,7 +106,7 @@
 
             <framework:SectionControl HeaderText="Push" IsExpanded="True" Margin="0,6,0,0" IsBusy="{Binding IsBusy}" ShowProgressWhenBusy="True" >
                 <framework:SectionControl.Content>
-                    <CheckBox IsChecked="{Binding Mode=TwoWay, Path=ForcePush}" Background="Transparent" Content="Perform Push (forced)" Margin="6,6,3,0" />
+                    <CheckBox IsChecked="{Binding Mode=TwoWay, Path=DoForcePush}" Background="Transparent" Content="Perform Push (forced)" Margin="6,6,3,0" />
                 </framework:SectionControl.Content>
             </framework:SectionControl>
         </StackPanel>

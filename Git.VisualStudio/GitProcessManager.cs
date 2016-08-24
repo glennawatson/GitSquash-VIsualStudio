@@ -16,9 +16,8 @@
     /// </summary>
     public class GitProcessManager : IGitProcessManager
     {
-        private static IOutputLogger outputLogger;
-
         private readonly string repoDirectory;
+        private IOutputLogger outputLogger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GitProcessManager"/> class.
@@ -28,7 +27,7 @@
         public GitProcessManager(string repoDirectory, IOutputLogger newOutputLogger)
         {
             this.repoDirectory = repoDirectory;
-            outputLogger = newOutputLogger;
+            this.outputLogger = newOutputLogger;
         }
 
         /// <summary>
@@ -127,7 +126,7 @@
             }
 
             sb.AppendLine(e.Data);
-            outputLogger?.WriteLine(e.Data);
+            this.outputLogger?.WriteLine(e.Data);
         }
 
         private void OnErrorReceived(DataReceivedEventArgs e, StringBuilder sb)
@@ -139,12 +138,12 @@
 
             if (!e.Data.StartsWith("fatal:", StringComparison.OrdinalIgnoreCase))
             {
-                outputLogger?.WriteLine(e.Data);
+                this.outputLogger?.WriteLine(e.Data);
                 sb.AppendLine(e.Data);
                 return;
             }
 
-            outputLogger?.WriteLine(string.Format(Resources.ErrorRunningGit, e.Data));
+            this.outputLogger?.WriteLine(string.Format(Resources.ErrorRunningGit, e.Data));
         }
     }
 }
