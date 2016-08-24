@@ -24,5 +24,10 @@
         /// Include remote commits in the log entries.
         /// </summary>
         IncludeRemotes = 4,
+
+        /// <summary>
+        /// Include branch only commits and the parent.
+        /// </summary>
+        BranchOnlyAndParent = 8
     }
 }

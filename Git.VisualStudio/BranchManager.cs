@@ -129,7 +129,7 @@
         /// <inheritdoc />
         public async Task<IList<GitCommit>> GetCommitsForBranch(GitBranch branch, int skip, int limit, GitLogOptions logOptions, CancellationToken token)
         {
-            string arguments = ExtractLogParameter(branch, skip, limit, logOptions, "HEAD");
+            string arguments = await this.ExtractLogParameter(branch, skip, limit, logOptions, "HEAD", token);
 
             var result = await this.gitProcessManager.RunGit("log " + arguments, token);
 
@@ -148,7 +148,7 @@
         /// <inheritdoc />
         public async Task<string> GetCommitMessagesAfterParent(GitCommit parent, CancellationToken token)
         {
-            string arguments = ExtractLogParameter(await this.GetCurrentCheckedOutBranch(token), 0, 0, GitLogOptions.None, $"{parent.Sha}..HEAD");
+            string arguments = await this.ExtractLogParameter(await this.GetCurrentCheckedOutBranch(token), 0, 0, GitLogOptions.None, $"{parent.Sha}..HEAD", token);
 
             var result = await this.gitProcessManager.RunGit("log " + arguments, token);
 
@@ -240,7 +240,7 @@
             return results;
         }
 
-        private static string ExtractLogParameter(GitBranch branch, int skip, int limit, GitLogOptions logOptions, string revisionRange)
+        private async Task<string> ExtractLogParameter(GitBranch branch, int skip, int limit, GitLogOptions logOptions, string revisionRange, CancellationToken token)
         {
             StringBuilder arguments = new StringBuilder();
 
@@ -254,14 +254,7 @@
                 arguments.Append($" --max-count={limit}");
             }
 
-            if (branch != null)
-            {
-                arguments.Append($" --branches={branch.FriendlyName}");
-            }
-            else
-            {
-                arguments.Append(" --branches --tags");
-            }
+            arguments.Append(branch != null ? $" --branches={branch.FriendlyName}" : " --branches --tags");
 
             arguments.Append(" --full-history");
 
@@ -283,6 +276,22 @@
             arguments.Append(" --date=iso");
 
             arguments.Append($" {revisionRange} --");
+            StringBuilder ignoreBranches = new StringBuilder("--not ");
+
+            if (!logOptions.HasFlag(GitLogOptions.BranchOnlyAndParent))
+            {
+                var branches = await this.GetLocalAndRemoteBranches(token);
+
+                foreach (var testBranch in branches)
+                {
+                    if (testBranch != branch)
+                    {
+                        ignoreBranches.Append($"{testBranch.FriendlyName} ");
+                    }
+                }
+            }
+            arguments.Append(ignoreBranches + "-- ");
+
             return arguments.ToString();
         }
     }
