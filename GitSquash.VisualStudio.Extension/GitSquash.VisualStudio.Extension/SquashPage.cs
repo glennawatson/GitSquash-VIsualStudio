@@ -91,9 +91,13 @@
 
         private void SetViewModel()
         {
-            RelayCommand showBranches = new RelayCommand(() => RxApp.MainThreadScheduler.Schedule(() => this.ShowPage(TeamExplorerPageIds.GitBranches)));
-            RelayCommand showConflicts = new RelayCommand(() => RxApp.MainThreadScheduler.Schedule(() => this.ShowPage(TeamExplorerPageIds.GitConflicts)));
-            RelayCommand showChanges = new RelayCommand(() => RxApp.MainThreadScheduler.Schedule(() => this.ShowPage(TeamExplorerPageIds.GitChanges)));
+            var showBranches = ReactiveCommand.Create();
+            showBranches.Subscribe(_ => this.ShowPage(TeamExplorerPageIds.GitBranches));
+            var showConflicts = ReactiveCommand.Create();
+            showConflicts.Subscribe(_ => this.ShowPage(TeamExplorerPageIds.GitConflicts));
+            var showChanges = ReactiveCommand.Create();
+            showChanges.Subscribe(_ => this.ShowPage(TeamExplorerPageIds.GitChanges));
+
             IGitSquashWrapper squashWrapper = this.GetService<IGitSquashWrapper>();
 
             RxApp.MainThreadScheduler.Schedule(() => { this.view.ViewModel = new SquashViewModel(squashWrapper, showBranches, showConflicts, showChanges); });
