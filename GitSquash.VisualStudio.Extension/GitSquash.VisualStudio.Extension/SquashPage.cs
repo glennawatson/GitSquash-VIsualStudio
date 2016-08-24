@@ -1,5 +1,4 @@
-﻿
-namespace GitSquash.VisualStudio.Extension
+﻿namespace GitSquash.VisualStudio.Extension
 {
     using System;
     using System.ComponentModel.Composition;
@@ -92,9 +91,9 @@ namespace GitSquash.VisualStudio.Extension
 
         private void SetViewModel()
         {
-            RelayCommand showBranches = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitBranches));
-            RelayCommand showConflicts = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitConflicts));
-            RelayCommand showChanges = new RelayCommand(() => this.ShowPage(TeamExplorerPageIds.GitChanges));
+            RelayCommand showBranches = new RelayCommand(() => RxApp.MainThreadScheduler.Schedule(() => this.ShowPage(TeamExplorerPageIds.GitBranches)));
+            RelayCommand showConflicts = new RelayCommand(() => RxApp.MainThreadScheduler.Schedule(() => this.ShowPage(TeamExplorerPageIds.GitConflicts)));
+            RelayCommand showChanges = new RelayCommand(() => RxApp.MainThreadScheduler.Schedule(() => this.ShowPage(TeamExplorerPageIds.GitChanges)));
             IGitSquashWrapper squashWrapper = this.GetService<IGitSquashWrapper>();
 
             RxApp.MainThreadScheduler.Schedule(() => { this.view.ViewModel = new SquashViewModel(squashWrapper, showBranches, showConflicts, showChanges); });

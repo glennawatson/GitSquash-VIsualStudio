@@ -34,7 +34,7 @@ namespace GitSquash.VisualStudio
         {
             this.repoDirectory = repoDirectory;
             this.gitProcess = gitProcess ?? new GitProcessManager(repoDirectory, logger);
-            this.branchManager = new BranchManager(this.repoDirectory);
+            this.branchManager = new BranchManager(this.repoDirectory, null);
         }
 
         /// <inheritdoc />

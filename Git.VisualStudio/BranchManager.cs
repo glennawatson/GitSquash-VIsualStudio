@@ -19,9 +19,10 @@
         /// Initializes a new instance of the <see cref="BranchManager"/> class.
         /// </summary>
         /// <param name="repoPath">The directory to the repo.</param>
-        public BranchManager(string repoPath)
+        /// <param name="logger">The logger to use.</param>
+        public BranchManager(string repoPath, IOutputLogger logger)
         {
-            this.gitProcessManager = new GitProcessManager(repoPath, new DebugOutputLog());
+            this.gitProcessManager = new GitProcessManager(repoPath, logger ?? new DebugOutputLog());
         }
 
         /// <inheritdoc />
@@ -215,7 +216,7 @@
             IList<GitCommit> results = new List<GitCommit>();
             foreach (string line in lines.Select(x => x.Trim('\r', '\n').Trim()))
             {
-                string[] fields = line.Split(new[] { '\u001f' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] fields = line.Split('\u001f');
 
                 if (fields.Length != 11)
                 {
