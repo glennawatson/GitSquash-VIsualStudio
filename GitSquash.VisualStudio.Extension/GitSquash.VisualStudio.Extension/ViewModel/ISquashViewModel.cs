@@ -47,6 +47,16 @@
         ICommand CancelOperation { get; }
 
         /// <summary>
+        /// Gets a command which will force a push.
+        /// </summary>
+        ICommand PushForce { get; }
+
+        /// <summary>
+        /// Gets a command which will pull the origin.
+        /// </summary>
+        ICommand FetchOrigin { get; }
+
+        /// <summary>
         /// Gets or sets the wrapper for the GIT squash operation.
         /// </summary>
         IGitSquashWrapper SquashWrapper { get; set; }

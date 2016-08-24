@@ -9,11 +9,15 @@
         /// Initializes a new instance of the <see cref="GitCommandResponse"/> class.
         /// </summary>
         /// <param name="success">If the command was successful.</param>
-        /// <param name="commandOutput">The command output.</param>
-        public GitCommandResponse(bool success, string commandOutput)
+        /// <param name="outputMessage">The command output.</param>
+        /// <param name="processOutput">The output from the process.</param>
+        /// <param name="returnCode">The return code from the process.</param>
+        public GitCommandResponse(bool success, string outputMessage, string processOutput, int returnCode)
         {
             this.Success = success;
-            this.CommandOutput = commandOutput;
+            this.OutputMessage = outputMessage;
+            this.ProcessOutput = processOutput;
+            this.ReturnCode = returnCode;
         }
 
         /// <summary>
@@ -24,6 +28,16 @@
         /// <summary>
         /// Gets the output from the command.
         /// </summary>
-        public string CommandOutput { get; private set; }
+        public string OutputMessage { get; private set; }
+
+        /// <summary>
+        /// Gets the output from the process.
+        /// </summary>
+        public string ProcessOutput { get; private set; }
+
+        /// <summary>
+        /// Gets the return code from the process.
+        /// </summary>
+        public int ReturnCode { get; private set; }
     }
 }

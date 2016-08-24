@@ -3,15 +3,11 @@ namespace GitSquash.VisualStudio
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using System.Reflection;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
     using Git.VisualStudio;
-
-    using LibGit2Sharp;
 
     using PropertyChanged;
 
@@ -26,6 +22,8 @@ namespace GitSquash.VisualStudio
 
         private readonly IGitProcessManager gitProcess;
 
+        private readonly IBranchManager branchManager;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="GitSquashWrapper" /> class.
         /// </summary>
@@ -36,65 +34,43 @@ namespace GitSquash.VisualStudio
         {
             this.repoDirectory = repoDirectory;
             this.gitProcess = gitProcess ?? new GitProcessManager(repoDirectory, logger);
+            this.branchManager = new BranchManager(this.repoDirectory);
         }
 
         /// <inheritdoc />
-        public string GetCommitMessages(GitCommit startCommit)
+        public async Task<string> GetCommitMessages(GitCommit startCommit, CancellationToken token)
         {
             if (startCommit == null)
             {
                 return null;
             }
 
-            var sb = new StringBuilder();
-            using (Repository repository = this.GetRepository())
-            {
-                foreach (Commit commit in repository.Head.Commits.TakeWhile(x => x.Sha != startCommit.Sha))
-                {
-                    sb.AppendLine(commit.Message.Trim());
-                }
-            }
+            var result = await this.branchManager.GetCommitMessagesAfterParent(startCommit, token);
 
-            return TrimEmptyLines(sb.ToString());
+            return result.TrimEmptyLines();
         }
 
         /// <inheritdoc />
-        public GitBranch GetCurrentBranch()
+        public Task<GitBranch> GetCurrentBranch(CancellationToken token)
         {
-            using (Repository repository = this.GetRepository())
-            {
-                return new GitBranch(repository.Head.FriendlyName);
-            }
+            return this.branchManager.GetCurrentCheckedOutBranch(token);
         }
 
         /// <inheritdoc />
         public async Task<GitCommandResponse> PushForce(CancellationToken token)
         {
-            using (Repository repository = this.GetRepository())
+            if (await this.branchManager.GetRemoteBranch(await this.branchManager.GetCurrentCheckedOutBranch(token), token) != null)
             {
-                if (repository.Head.IsTracking == false)
-                {
-                    return new GitCommandResponse(false, "The branch has not been pushed before.");
-                }
-
-                return await this.gitProcess.RunGit("push -f", token);
+                return new GitCommandResponse(false, "The branch has not been pushed before.", null, 0);
             }
+
+            return await this.gitProcess.RunGit("push -f", token);
         }
 
         /// <inheritdoc />
-        public IEnumerable<GitCommit> GetCommitsForBranch(GitBranch branch, int number = 25)
+        public Task<IList<GitCommit>> GetCommitsForBranch(GitBranch branch, CancellationToken token, int number = 25)
         {
-            using (Repository repository = this.GetRepository())
-            {
-                Branch internalBranch = repository.Branches.FirstOrDefault(x => x.FriendlyName == branch.FriendlyName);
-
-                if (internalBranch == null)
-                {
-                    return Enumerable.Empty<GitCommit>();
-                }
-
-                return internalBranch.Commits.Take(number).Select(x => new GitCommit(x.Sha, x.MessageShort)).ToList();
-            }
+            return this.branchManager.GetCommitsForBranch(branch, 0, number, GitLogOptions.None, token);
         }
 
         /// <inheritdoc />
@@ -106,39 +82,30 @@ namespace GitSquash.VisualStudio
         }
 
         /// <inheritdoc />
-        public bool IsWorkingDirectoryDirty()
+        public Task<bool> IsWorkingDirectoryDirty(CancellationToken token)
         {
-            using (Repository repository = this.GetRepository())
-            {
-                return repository.RetrieveStatus().IsDirty;
-            }
+            return this.branchManager.IsWorkingDirectoryDirty(token);
         }
 
         /// <inheritdoc />
-        public bool HasConflicts()
+        public Task<bool> HasConflicts(CancellationToken token)
         {
-            using (Repository repository = this.GetRepository())
-            {
-                return repository.Index.IsFullyMerged == false;
-            }
+            return this.branchManager.IsMergeConflict(token);
         }
 
         /// <inheritdoc />
         public async Task<GitCommandResponse> Squash(CancellationToken token, string newCommitMessage, GitCommit startCommit)
         {
-            using (Repository repository = this.GetRepository())
+            if (await this.branchManager.IsWorkingDirectoryDirty(token))
             {
-                if (repository.RetrieveStatus().IsDirty)
-                {
-                    return new GitCommandResponse(false, "Cannot rebase: You have unstaged changes.");
-                }
+                return new GitCommandResponse(false, "Cannot rebase: You have unstaged changes.", null, 0);
             }
 
             string rewriterName;
             string commentWriterName;
             if (this.GetWritersName(out rewriterName, out commentWriterName) == false)
             {
-                return new GitCommandResponse(false, "Cannot get valid paths to GIT parameters");
+                return new GitCommandResponse(false, "Cannot get valid paths to GIT parameters", null, 0);
             }
 
             string fileName = Path.GetTempFileName();
@@ -146,7 +113,7 @@ namespace GitSquash.VisualStudio
 
             var environmentVariables = new Dictionary<string, string> { { "COMMENT_FILE_NAME", fileName } };
 
-            return await this.gitProcess.RunGit($"-c core.quotepath=false -c \"sequence.editor=\'{rewriterName}\'\" -c \"core.editor=\'{commentWriterName}\'\" rebase -i  {startCommit.Sha}", token, environmentVariables);
+            return await this.gitProcess.RunGit($"-c \"sequence.editor=\'{rewriterName}\'\" -c \"core.editor=\'{commentWriterName}\'\" rebase -i  {startCommit.Sha}", token, environmentVariables);
         }
 
         /// <inheritdoc />
@@ -160,12 +127,9 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public async Task<GitCommandResponse> Rebase(CancellationToken token, GitBranch parentBranch)
         {
-            using (Repository repository = this.GetRepository())
+            if (await this.branchManager.IsWorkingDirectoryDirty(token))
             {
-                if (repository.RetrieveStatus().IsDirty)
-                {
-                    return new GitCommandResponse(false, "Cannot rebase: You have unstaged changes.");
-                }
+                return new GitCommandResponse(false, "Cannot rebase: You have unstaged changes.", null, 0);
             }
 
             GitCommandResponse response = await this.FetchOrigin(token);
@@ -191,33 +155,16 @@ namespace GitSquash.VisualStudio
             string commentWriterName;
             if (this.GetWritersName(out rewriterName, out commentWriterName) == false)
             {
-                return new GitCommandResponse(false, "Cannot get valid paths to GIT parameters");
+                return new GitCommandResponse(false, "Cannot get valid paths to GIT parameters", null, 0);
             }
 
             return await this.gitProcess.RunGit($"-c core.quotepath=false -c \"core.editor=\'{commentWriterName}\'\"  rebase --continue", token);
         }
 
         /// <inheritdoc />
-        public IList<GitBranch> GetBranches()
+        public Task<IList<GitBranch>> GetBranches(CancellationToken token)
         {
-            using (Repository repository = this.GetRepository())
-            {
-                return repository.Branches.OrderBy(x => x.FriendlyName).Select(x => new GitBranch(x.FriendlyName)).ToList();
-            }
-        }
-
-        private static string TrimEmptyLines(string input)
-        {
-            input = input.Trim('\r', '\n');
-            input = input.Trim();
-
-            return input;
-        }
-
-
-        private Repository GetRepository()
-        {
-            return new Repository(this.repoDirectory);
+            return this.branchManager.GetLocalAndRemoteBranches(token);
         }
 
         private bool GetWritersName(out string rebaseWriter, out string commentWriter)

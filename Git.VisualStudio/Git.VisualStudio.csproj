@@ -52,9 +52,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BranchManager.cs" />
+    <Compile Include="DebugOutputLog.cs" />
+    <Compile Include="GitBranch.cs" />
     <Compile Include="GitCommandResponse.cs" />
+    <Compile Include="GitCommit.cs" />
     <Compile Include="GitHelper.cs" />
+    <Compile Include="GitLogOptions.cs" />
     <Compile Include="GitProcessManager.cs" />
+    <Compile Include="IBranchManager.cs" />
     <Compile Include="IGitProcessManager.cs" />
     <Compile Include="IOutputLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -63,6 +69,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="StringExtensionMethods.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">

@@ -34,6 +34,10 @@
                 <teamExplorer:TextLink Text="Squash" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding Squash}" />
                 <Separator Style="{StaticResource VerticalSeparator}" />
                 <teamExplorer:TextLink Text="Rebase Only" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding Rebase}" />
+                <Separator Style="{StaticResource VerticalSeparator}" />
+                <teamExplorer:TextLink Text="Push (Force)" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding ForcePush}" />
+                <Separator Style="{StaticResource VerticalSeparator}" />
+                <teamExplorer:TextLink Text="Fetch Origin" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding FetchOrigin}" />
             </WrapPanel>
 
             <DockPanel Visibility="{Binding IsBusy, Converter={StaticResource TrueToVisibleConverter}}">
@@ -65,11 +69,11 @@
             </WrapPanel>
             <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch" Visibility="{Binding OperationSuccess, Converter={StaticResource FalseToVisibleConverter}, FallbackValue=Visibility.Collapsed}">
                 <Rectangle Margin="2,0,4,2" Width="14" Height="14" Fill="{StaticResource WarningIconBrush}" />
-                <wpf:TextBlockControl Text="{Binding GitCommandResponse.CommandOutput}" Margin="2,0,4,2"  />
+                <wpf:TextBlockControl Text="{Binding GitCommandResponse.OutputMessage}" Margin="2,0,4,2"  />
             </WrapPanel>
             <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch" Visibility="{Binding OperationSuccess, Converter={StaticResource TrueToVisibleConverter}, FallbackValue=Visibility.Collapsed}">
                 <Rectangle Margin="2,0,4,2" Width="14" Height="14" Fill="{StaticResource InformationIconBrush}" />
-                <wpf:TextBlockControl Text="{Binding GitCommandResponse.CommandOutput}" Margin="2,0,4,2"  />
+                <wpf:TextBlockControl Text="{Binding GitCommandResponse.OutputMessage}" Margin="2,0,4,2"  />
             </WrapPanel>
 
             <StackPanel Orientation="Horizontal">
