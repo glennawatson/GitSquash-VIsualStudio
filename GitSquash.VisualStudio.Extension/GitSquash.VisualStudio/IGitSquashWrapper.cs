@@ -103,8 +103,9 @@
         /// </summary>
         /// <param name="branch">The branch to get the details for.</param>
         /// <param name="token">The cancellation token able to cancel the task.</param>
+        /// <param name="logOptions">The log options.</param>
         /// <param name="number">The number of commits to retrieve for.</param>
         /// <returns>A collection of commits.</returns>
-        Task<IList<GitCommit>> GetCommitsForBranch(GitBranch branch, CancellationToken token, int number = 25);
+        Task<IList<GitCommit>> GetCommitsForBranch(GitBranch branch, CancellationToken token, GitLogOptions logOptions, int number = 25);
     }
 }

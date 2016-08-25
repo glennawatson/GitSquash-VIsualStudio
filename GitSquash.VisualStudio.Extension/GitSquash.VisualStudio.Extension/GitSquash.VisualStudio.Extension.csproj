@@ -75,8 +75,15 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
     <Compile Include="SquashNavigationItem.cs" />
     <Compile Include="SquashPage.cs" />
+    <Compile Include="ViewModel\GitLogOptionsViewModel.cs" />
+    <Compile Include="ViewModel\GitLogOptionViewModel.cs" />
     <Compile Include="ViewModel\ISquashViewModel.cs" />
     <Compile Include="ViewModel\SquashViewModel.cs" />
     <Compile Include="View\SquashView.xaml.cs">
@@ -92,6 +99,10 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
@@ -309,10 +320,8 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
   </Target>
-
   <Target Name="BeforeBuild">
-    <Exec ContinueOnError="false"
-          Command="&quot;..\..\packages\Brutal.Dev.StrongNameSigner.1.8.0\tools\StrongNameSigner.Console.exe&quot; -in &quot;..\..\packages\reactiveui-core.6.5.1\lib\Net45|..\..\packages\Splat.1.6.2\lib\Net45&quot;" />
+    <Exec ContinueOnError="false" Command="&quot;..\..\packages\Brutal.Dev.StrongNameSigner.1.8.0\tools\StrongNameSigner.Console.exe&quot; -in &quot;..\..\packages\reactiveui-core.6.5.1\lib\Net45|..\..\packages\Splat.1.6.2\lib\Net45&quot;" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -10,6 +10,9 @@
     using System.Threading.Tasks;
     using System.Windows.Input;
     using Git.VisualStudio;
+
+    using Properties;
+
     using ReactiveUI;
 
     /// <summary>
@@ -48,6 +51,8 @@
         private bool rebaseInProgress;
 
         private GitCommit selectedCommit;
+
+        private GitLogOptionsViewModel gitLogOptions;
 
         private IGitSquashWrapper squashWrapper;
 
@@ -112,6 +117,26 @@
             updateCommand.Subscribe(x => this.CommitMessage = x);
             this.updateCommitMessage = updateCommand;
             this.WhenAnyValue(x => x.SelectedCommit).InvokeCommand(this.updateCommitMessage);
+
+            this.LogOptions = new GitLogOptionsViewModel { Value = Settings.Default.HistorySetting };
+            this.DoForcePush = Settings.Default.PerformPush;
+            this.ApplyRebase = Settings.Default.PerformRebaseAfterSquash;
+
+            this.WhenAnyValue(x => x.LogOptions, x => x.DoForcePush, x => x.ApplyRebase).Skip(1).Subscribe(x =>
+            {
+                Settings.Default.HistorySetting = x.Item1?.Value ?? GitLogOptions.BranchOnlyAndParent;
+                Settings.Default.PerformPush = x.Item2;
+                Settings.Default.PerformRebaseAfterSquash = x.Item3;
+                Settings.Default.Save();
+            });
+
+            this.LogOptions.WhenAnyValue(x => x.Value).Skip(1).Subscribe(x =>
+            {
+                Settings.Default.HistorySetting = x;
+                Settings.Default.Save();
+
+                this.Refresh();
+            });
 
             var refreshCommand = ReactiveCommand.Create();
             refreshCommand.Subscribe(_ => this.RefreshInternal());
@@ -300,6 +325,20 @@
         }
 
         /// <inheritdoc />
+        public GitLogOptionsViewModel LogOptions
+        {
+            get
+            {
+                return this.gitLogOptions;
+            }
+
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref this.gitLogOptions, value);
+            }
+        }
+
+        /// <inheritdoc />
         public bool? OperationSuccess => this.isOperationSuccess.Value;
 
         /// <inheritdoc />
@@ -372,7 +411,7 @@
             this.IsRebaseInProgress = this.SquashWrapper.IsRebaseHappening();
             this.IsConflicts = await this.SquashWrapper.HasConflicts(CancellationToken.None);
             this.IsDirty = await this.SquashWrapper.IsWorkingDirectoryDirty(CancellationToken.None) && !await this.SquashWrapper.HasConflicts(CancellationToken.None);
-            this.BranchCommits = await this.SquashWrapper.GetCommitsForBranch(this.CurrentBranch, CancellationToken.None);
+            this.BranchCommits = await this.SquashWrapper.GetCommitsForBranch(this.CurrentBranch, CancellationToken.None, this.LogOptions.Value);
             this.SelectedCommit = this.BranchCommits.FirstOrDefault(x => x == oldCommit);
             this.CommitMessage = string.IsNullOrWhiteSpace(oldCommitText) ? this.CommitMessage : oldCommitText;
         }

@@ -82,12 +82,34 @@
             </StackPanel>
             <framework:SectionControl HeaderText="Parent Commit" IsExpanded="True" Margin="0,6,0,0" IsBusy="{Binding IsBusy}" ShowProgressWhenBusy="True"  >
                 <framework:SectionControl.Content>
-                    <DataGrid IsReadOnly="True" SelectionMode="Single" SelectedValue="{Binding SelectedCommit}"  ItemsSource="{Binding BranchCommits}" AutoGenerateColumns="False" Margin="0,0,6,0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn MaxWidth="50" Binding="{Binding Sha, Converter={converters:PrefixValueConverter PrefixLength=6}}" Header="ID"/>
-                            <DataGridTextColumn Binding="{Binding MessageShort}"  Width="250" Header="Message" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Margin="2" Orientation="Horizontal">
+                            <wpf:TextBlockControl Text="Log Options: " />
+                            <ComboBox Width="100" ItemsSource="{Binding LogOptions}" Style="{StaticResource PlainComboBox}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <CheckBox IsChecked="{Binding Enabled}"
+                       Width="20" />
+                                            <TextBlock Text="{Binding Name}"
+                       Width="100" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+
+                            </ComboBox>
+                        </StackPanel>
+                        <DataGrid Grid.Row="1" IsReadOnly="True" SelectionMode="Single" SelectedValue="{Binding SelectedCommit}"  ItemsSource="{Binding BranchCommits}" AutoGenerateColumns="False" Margin="0,0,6,0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn MaxWidth="50" Binding="{Binding Sha, Converter={converters:PrefixValueConverter PrefixLength=6}}" Header="ID"/>
+                                <DataGridTextColumn Binding="{Binding MessageShort}"  Width="250" Header="Message" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
                 </framework:SectionControl.Content>
             </framework:SectionControl>
             <framework:SectionControl HeaderText="New Commit Message" IsExpanded="True" Margin="0,6,0,0" IsBusy="{Binding IsBusy}" ShowProgressWhenBusy="True" >

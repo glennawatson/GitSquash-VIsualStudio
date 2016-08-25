@@ -1,8 +1,11 @@
 ﻿namespace Git.VisualStudio
 {
+    using System;
+
     /// <summary>
     /// A list of options when we are doing 
     /// </summary>
+    [Flags]
     public enum GitLogOptions
     {
         /// <summary>
@@ -28,6 +31,6 @@
         /// <summary>
         /// Include branch only commits and the parent.
         /// </summary>
-        BranchOnlyAndParent = 8
+        BranchOnlyAndParent = 8,
     }
 }

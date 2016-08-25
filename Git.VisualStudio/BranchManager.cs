@@ -138,11 +138,16 @@
                 return new List<GitCommit>();
             }
 
-            string[] lines = result.ProcessOutput.Split(new[] { '\u001e' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] lines = result.ProcessOutput.Trim('\r', '\n').Split(new[] { '\u001e' }, StringSplitOptions.RemoveEmptyEntries);
+           
+            IList<GitCommit> results = ConvertStringToGitCommits(lines).OrderByDescending(x => x.DateTime).ToList();
 
-            IList<GitCommit> results = ConvertStringToGitCommits(lines);
+            if (logOptions.HasFlag(GitLogOptions.BranchOnlyAndParent) && results.Last().Parents.Any())
+            {
+                await this.GetSingleCommitLog(token, results);
+            }
 
-            return results.OrderBy(x => x.DateTime).ToList();
+            return results;
         }
 
         /// <inheritdoc />
@@ -211,6 +216,16 @@
             return null;
         }
 
+        private static void GenerateFormat(StringBuilder arguments)
+        {
+            StringBuilder formatString = new StringBuilder("--format=%H\u001f%h\u001f%P\u001f");
+            formatString.Append("%ci");
+            formatString.Append("\u001f%cn\u001f%ce\u001f%an\u001f%ae\u001f%d\u001f%s\u001f%B\u001e");
+            arguments.Append(" " + formatString);
+            arguments.Append(" --decorate=full");
+            arguments.Append(" --date=iso");
+        }
+
         private static IList<GitCommit> ConvertStringToGitCommits(string[] lines)
         {
             IList<GitCommit> results = new List<GitCommit>();
@@ -225,7 +240,7 @@
 
                 string changeset = fields[0];
                 string changesetShort = fields[1];
-                string[] parents = fields[2].Split(' ');
+                string[] parents = fields[2].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim('\r', '\n').Trim()).ToArray();
                 DateTime commitDate;
                 DateTime.TryParse(fields[3], out commitDate);
                 string committer = $"{fields[4]} <{fields[5]}>";
@@ -238,6 +253,23 @@
             }
 
             return results;
+        }
+
+        private async Task GetSingleCommitLog(CancellationToken token, IList<GitCommit> results)
+        {
+            GitCommandResponse result;
+            string[] lines;
+            StringBuilder singleCommitArguments = new StringBuilder();
+            singleCommitArguments.Append($"-1 {results.Last().Parents.First()} ");
+            GenerateFormat(singleCommitArguments);
+
+            result = await this.gitProcessManager.RunGit("log " + singleCommitArguments, token);
+            lines = result.ProcessOutput.Trim('\r', '\n').Split(new[] { '\u001e' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var gitCommit in ConvertStringToGitCommits(lines))
+            {
+                results.Add(gitCommit);
+            }
         }
 
         private async Task<string> ExtractLogParameter(GitBranch branch, int skip, int limit, GitLogOptions logOptions, string revisionRange, CancellationToken token)
@@ -272,18 +304,13 @@
             {
                 arguments.Append(" --no-merges --first-parent");
             }
-  
-            StringBuilder formatString = new StringBuilder("--format=%H\u001f%h\u001f%P\u001f");
-            formatString.Append("%ci");
-            formatString.Append("\u001f%cn\u001f%ce\u001f%an\u001f%ae\u001f%d\u001f%s\u001f%B\u001e");
-            arguments.Append(" " + formatString);
-            arguments.Append(" --decorate=full");
-            arguments.Append(" --date=iso");
 
-            StringBuilder ignoreBranches = new StringBuilder("--not ");
+            GenerateFormat(arguments);
 
             if (logOptions.HasFlag(GitLogOptions.BranchOnlyAndParent))
             {
+                StringBuilder ignoreBranches = new StringBuilder("--not ");
+
                 var branches = await this.GetLocalBranches(token);
 
                 foreach (var testBranch in branches)

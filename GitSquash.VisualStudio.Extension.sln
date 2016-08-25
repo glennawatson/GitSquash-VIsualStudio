@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommentWriter", "GitSquash.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Git.VisualStudio", "Git.VisualStudio\Git.VisualStudio.csproj", "{F204EA1B-817B-4227-B653-A3F485C22800}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Git.VisualStudio.UnitTests", "Git.VisualStudio.UnitTests\Git.VisualStudio.UnitTests.csproj", "{9711CCD1-DAC0-4575-8BC2-A77F26121DB6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,14 @@ Global
 		{F204EA1B-817B-4227-B653-A3F485C22800}.VS2013|Any CPU.Build.0 = Release|Any CPU
 		{F204EA1B-817B-4227-B653-A3F485C22800}.VS2015|Any CPU.ActiveCfg = Release|Any CPU
 		{F204EA1B-817B-4227-B653-A3F485C22800}.VS2015|Any CPU.Build.0 = Release|Any CPU
+		{9711CCD1-DAC0-4575-8BC2-A77F26121DB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9711CCD1-DAC0-4575-8BC2-A77F26121DB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9711CCD1-DAC0-4575-8BC2-A77F26121DB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9711CCD1-DAC0-4575-8BC2-A77F26121DB6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9711CCD1-DAC0-4575-8BC2-A77F26121DB6}.VS2013|Any CPU.ActiveCfg = Release|Any CPU
+		{9711CCD1-DAC0-4575-8BC2-A77F26121DB6}.VS2013|Any CPU.Build.0 = Release|Any CPU
+		{9711CCD1-DAC0-4575-8BC2-A77F26121DB6}.VS2015|Any CPU.ActiveCfg = Release|Any CPU
+		{9711CCD1-DAC0-4575-8BC2-A77F26121DB6}.VS2015|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

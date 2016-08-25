@@ -128,6 +128,11 @@
         GitCommandResponse GitCommandResponse { get; }
 
         /// <summary>
+        /// Gets the log options.
+        /// </summary>
+        GitLogOptionsViewModel LogOptions { get; }
+
+        /// <summary>
         /// Gets a value indicating whether the previous operation success.
         /// </summary>
         bool? OperationSuccess { get; }

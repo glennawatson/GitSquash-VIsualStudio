@@ -46,7 +46,7 @@
                 gitArguments = $"--no-pager -c color.branch=false -c color.diff=false -c color.status=false -c diff.mnemonicprefix=false -c core.quotepath=false {gitArguments}";
             }
 
-            outputLogger?.WriteLine($"execute: git {gitArguments}");
+            this.outputLogger?.WriteLine($"execute: git {gitArguments}");
 
             using (Process process = CreateGitProcess(gitArguments, this.repoDirectory))
             {

@@ -68,9 +68,9 @@ namespace GitSquash.VisualStudio
         }
 
         /// <inheritdoc />
-        public Task<IList<GitCommit>> GetCommitsForBranch(GitBranch branch, CancellationToken token, int number = 25)
+        public Task<IList<GitCommit>> GetCommitsForBranch(GitBranch branch, CancellationToken token, GitLogOptions logOptions, int number = 25)
         {
-            return this.branchManager.GetCommitsForBranch(branch, 0, number, GitLogOptions.BranchOnlyAndParent, token);
+            return this.branchManager.GetCommitsForBranch(branch, 0, number, logOptions, token);
         }
 
         /// <inheritdoc />
