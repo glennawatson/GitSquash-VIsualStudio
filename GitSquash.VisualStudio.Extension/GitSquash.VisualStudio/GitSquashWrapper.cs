@@ -103,7 +103,7 @@ namespace GitSquash.VisualStudio
 
             string rewriterName;
             string commentWriterName;
-            if (this.GetWritersName(out rewriterName, out commentWriterName) == false)
+            if (GetWritersName(out rewriterName, out commentWriterName) == false)
             {
                 return new GitCommandResponse(false, "Cannot get valid paths to GIT parameters", null, 0);
             }
@@ -153,7 +153,7 @@ namespace GitSquash.VisualStudio
         {
             string rewriterName;
             string commentWriterName;
-            if (this.GetWritersName(out rewriterName, out commentWriterName) == false)
+            if (GetWritersName(out rewriterName, out commentWriterName) == false)
             {
                 return new GitCommandResponse(false, "Cannot get valid paths to GIT parameters", null, 0);
             }
@@ -167,15 +167,26 @@ namespace GitSquash.VisualStudio
             return this.branchManager.GetLocalAndRemoteBranches(token);
         }
 
-        private bool GetWritersName(out string rebaseWriter, out string commentWriter)
+        /// <summary>
+        /// Gets the writers names.
+        /// </summary>
+        /// <param name="rebaseWriter">The rebase name.</param>
+        /// <param name="commentWriter">The comment name.</param>
+        /// <returns>The commit.</returns>
+        public static bool GetWritersName(out string rebaseWriter, out string commentWriter)
         {
             rebaseWriter = null;
             commentWriter = null;
 
             try
             {
+                var codeBaseUrl = new Uri(Assembly.GetExecutingAssembly().CodeBase);
+                var location = Uri.UnescapeDataString(codeBaseUrl.AbsolutePath);
 
-                string location = Assembly.GetExecutingAssembly().Location;
+                if (File.Exists(location) == false)
+                {
+                    location = Uri.UnescapeDataString(Assembly.GetExecutingAssembly().Location);
+                }
 
                 if (string.IsNullOrWhiteSpace(location))
                 {

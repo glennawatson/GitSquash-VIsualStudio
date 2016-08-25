@@ -34,9 +34,16 @@
             {
                 writer.NewLine = "\n";
 
-                foreach (string line in lines)
+                for (int i = 0; i < lines.Length; ++i)
                 {
-                    writer.WriteLine(line);
+                    if (i < (lines.Length - 1))
+                    {
+                        writer.WriteLine(lines[i]);
+                    }
+                    else
+                    {
+                        writer.Write(lines[i]);
+                    }
                 }
             }
         }
