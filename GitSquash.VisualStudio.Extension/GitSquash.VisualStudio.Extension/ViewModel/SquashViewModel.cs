@@ -123,8 +123,8 @@
             var updateCommand = ReactiveCommand.CreateAsyncTask(async _ => await this.PerformUpdateCommitMessage(CancellationToken.None));
             updateCommand.Subscribe(x => this.CommitMessage = x);
             this.updateCommitMessage = updateCommand;
-
-            this.refresh = ReactiveCommand.Create();
+            
+            this.refresh = ReactiveCommand.Create(this.WhenAnyValue(x => x.IsBusy).Select(x => x == false));
             this.refresh.Subscribe(_ => this.RefreshInternal());
 
             this.isBusy = new[]
