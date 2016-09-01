@@ -4,12 +4,12 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Reactive;
-    using System.Reactive.Concurrency;
     using System.Reactive.Linq;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Input;
+    using System.Windows.Threading;
 
     using Git.VisualStudio;
 
@@ -28,7 +28,7 @@
 
         private readonly ObservableAsPropertyHelper<bool?> isOperationSuccess;
 
-        private ObservableAsPropertyHelper<bool> isBusy;
+        private bool isBusy;
 
         private readonly ReactiveCommand<GitCommandResponse> fetchOrigin;
         private readonly ReactiveCommand<GitCommandResponse> pushForce;
@@ -130,18 +130,6 @@
             this.fetchOrigin = this.GenerateGitCommand(isNotBusyObservable, this.PerformFetchOrigin);
             this.skip = this.GenerateGitCommand(canContinueRebase, this.PerformSkipRebase);
 
-            this.isBusy = new[]
-                   {
-                        this.squash.IsExecuting,
-                        this.rebase.IsExecuting,
-                        this.continueRebase.IsExecuting,
-                        this.cancelOperation.IsExecuting,
-                        this.abortRebase.IsExecuting,
-                        this.fetchOrigin.IsExecuting,
-                        this.pushForce.IsExecuting,
-                        this.skip.IsExecuting
-                    }.Merge().ToProperty(this, x => x.IsBusy, out this.isBusy);
-
             var updateCommand = ReactiveCommand.CreateAsyncTask(async _ => await this.PerformUpdateCommitMessage(CancellationToken.None));
             updateCommand.Subscribe(x => this.CommitMessage = x);
             this.updateCommitMessage = updateCommand;
@@ -217,7 +205,18 @@
         }
 
         /// <inheritdoc />
-        public bool IsBusy => this.isBusy.Value;
+        public bool IsBusy
+        {
+            get
+            {
+                return this.isBusy;
+            }
+
+            set
+            {
+                this.RaiseAndSetIfChanged(ref this.isBusy, value);
+            }
+        }
 
         /// <inheritdoc />
         public bool ApplyRebase
@@ -453,6 +452,7 @@
 
             Func<Task<GitCommandResponse>> executeFunc = () =>
             {
+                Dispatcher.CurrentDispatcher.Invoke(() => this.IsBusy = true);
                 try
                 {
                     this.tokenSource?.Cancel();
@@ -471,6 +471,7 @@
             command.Subscribe(x =>
             {
                 this.GitCommandResponse = x;
+                this.IsBusy = false;
             });
            
             command.ThrownExceptions.ObserveOn(RxApp.MainThreadScheduler).Subscribe(ex => this.GitCommandResponse = new GitCommandResponse(false, ex.Message, null, 0));
