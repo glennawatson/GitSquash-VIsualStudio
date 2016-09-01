@@ -140,7 +140,7 @@
 
             string[] lines = result.ProcessOutput.Trim('\r', '\n').Split(new[] { '\u001e' }, StringSplitOptions.RemoveEmptyEntries);
            
-            IList<GitCommit> results = ConvertStringToGitCommits(lines).OrderByDescending(x => x.DateTime).ToList();
+            IList<GitCommit> results = ConvertStringToGitCommits(lines).ToList();
 
             if (logOptions.HasFlag(GitLogOptions.BranchOnlyAndParent) && results.Last().Parents.Any())
             {

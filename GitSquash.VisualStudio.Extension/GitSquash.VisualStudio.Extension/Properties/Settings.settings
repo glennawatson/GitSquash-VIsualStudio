@@ -11,5 +11,8 @@
     <Setting Name="HistorySetting" Type="Git.VisualStudio.GitLogOptions" Scope="User">
       <Value Profile="(Default)">BranchOnlyAndParent</Value>
     </Setting>
+    <Setting Name="PreviousCommitMessage" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

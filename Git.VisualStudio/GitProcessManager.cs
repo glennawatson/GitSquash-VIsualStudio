@@ -77,7 +77,7 @@
         private static Process CreateGitProcess(string arguments, string repoDirectory)
         {
             string gitInstallationPath = GitHelper.GetGitInstallationPath();
-            string pathToGit = Path.Combine(Path.Combine(gitInstallationPath, "bin\\git.exe"));
+            string pathToGit = Path.Combine(Path.Combine(gitInstallationPath, @"bin\git.exe"));
             return new Process
             {
                 StartInfo =

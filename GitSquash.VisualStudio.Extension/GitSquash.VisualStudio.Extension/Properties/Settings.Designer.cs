@@ -58,5 +58,17 @@ namespace GitSquash.VisualStudio.Extension.Properties {
                 this["HistorySetting"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string PreviousCommitMessage {
+            get {
+                return ((string)(this["PreviousCommitMessage"]));
+            }
+            set {
+                this["PreviousCommitMessage"] = value;
+            }
+        }
     }
 }

@@ -7,9 +7,12 @@
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+
     using FluentAssertions;
-    using Xunit;
+
     using LibGit2Sharp;
+
+    using Xunit;
 
     public class GitUnitTest
     {
@@ -26,7 +29,7 @@
             result.Success.Should().Be(true, "Must be able to init");
 
             int numberCommits = 10;
-            await GenerateCommits(numberCommits, tempDirectory, local, "master");
+            await this.GenerateCommits(numberCommits, tempDirectory, local, "master");
 
             BranchManager branchManager = new BranchManager(tempDirectory, null);
 
@@ -38,7 +41,7 @@
                 var branch = repository.Branches.FirstOrDefault(x => x.FriendlyName == "master");
                 branch.Should().NotBeNull();
 
-                CheckCommits(branch.Commits, commits);
+                CheckCommits(branch.Commits.ToList(), commits);
             }
 
             commits.Should().BeInDescendingOrder(x => x.DateTime);
@@ -54,11 +57,11 @@
                 var branch = repository.Branches.FirstOrDefault(x => x.FriendlyName == "test1");
                 branch.Should().NotBeNull();
 
-                CheckCommits(branch.Commits.Take(11), commits);
+                CheckCommits(branch.Commits.Take(11).ToList(), commits);
             }
         }
 
-        private static void CheckCommits(IEnumerable<Commit> repoCommits, IList<GitCommit> commits)
+        private static void CheckCommits(IList<Commit> repoCommits, IList<GitCommit> commits)
         {
             repoCommits.Select(x => x.Sha).ShouldAllBeEquivalentTo(commits.Select(x => x.Sha));
             repoCommits.Select(x => x.MessageShort).ShouldAllBeEquivalentTo(commits.Select(x => x.MessageShort));
@@ -77,7 +80,7 @@
             result.Success.Should().Be(true, "Must be able to init");
 
             int numberCommits = 10;
-            await GenerateCommits(numberCommits, tempDirectory, local, "master");
+            await this.GenerateCommits(numberCommits, tempDirectory, local, "master");
             BranchManager branchManager = new BranchManager(tempDirectory, null);
 
             var commits = await branchManager.GetCommitsForBranch(new GitBranch("master", false), 0, 0, GitLogOptions.BranchOnlyAndParent, CancellationToken.None);
@@ -92,7 +95,7 @@
             result = await local.RunGit("checkout test1", CancellationToken.None);
             result.Success.Should().Be(true, "Must be able checkout branch");
 
-            await GenerateCommits(numberCommits, tempDirectory, local, "master");
+            await this.GenerateCommits(numberCommits, tempDirectory, local, "master");
 
             commits = await branchManager.GetCommitsForBranch(new GitBranch("test1", false), 0, 0, GitLogOptions.None, CancellationToken.None);
 
@@ -101,7 +104,7 @@
 
         private async Task GenerateCommits(int numberCommits, string directory, IGitProcessManager local, string branchName)
         {
-            GitCommandResponse result = null;
+            GitCommandResponse result;
             if (branchName != "master")
             {
                 result = await local.RunGit($"branch {branchName}", CancellationToken.None);
@@ -119,7 +122,6 @@
                 result = await local.RunGit($"commit -m \"Commit {branchName}-{i}\"", CancellationToken.None);
                 result.Success.Should().Be(true, "Must be able to commit");
             }
-
         }
     }
 }

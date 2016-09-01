@@ -28,8 +28,6 @@
 
         private readonly ObservableAsPropertyHelper<bool?> isOperationSuccess;
 
-        private bool isBusy;
-
         private readonly ReactiveCommand<GitCommandResponse> fetchOrigin;
         private readonly ReactiveCommand<GitCommandResponse> pushForce;
         private readonly ReactiveCommand<object> cancelOperation;
@@ -39,6 +37,7 @@
         private readonly ReactiveCommand<GitCommandResponse> squash;
         private readonly ReactiveCommand<GitCommandResponse> skip;
 
+        private bool isBusy;
         private bool applyRebase = true;
 
         private IList<GitCommit> branchCommits;
@@ -68,8 +67,6 @@
         private IGitSquashWrapper squashWrapper;
 
         private CancellationTokenSource tokenSource;
-
-        private string lastCommitMessage;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SquashViewModel" /> class.
@@ -449,7 +446,6 @@
 
         private ReactiveCommand<GitCommandResponse> GenerateGitCommand(IObservable<bool> canExecuteObservable, Func<CancellationToken, Task<GitCommandResponse>> func)
         {
-
             Func<Task<GitCommandResponse>> executeFunc = () =>
             {
                 Dispatcher.CurrentDispatcher.Invoke(() => this.IsBusy = true);
@@ -503,7 +499,8 @@
 
         private async Task<GitCommandResponse> PerformSquash(CancellationToken token)
         {
-            this.lastCommitMessage = this.CommitMessage;
+            Settings.Default.PreviousCommitMessage = this.CommitMessage;
+            Settings.Default.Save();
 
             GitCommandResponse squashOutput = await this.SquashWrapper.Squash(token, this.CommitMessage, this.SelectedCommit);
 
@@ -589,13 +586,13 @@
         }
 
         private Task<GitCommandResponse> PerformContinueRebase(CancellationToken token)
-        {
-            return this.SquashWrapper.Continue(this.lastCommitMessage, token);
+        {            
+            return this.SquashWrapper.Continue(Settings.Default.PreviousCommitMessage, token);
         }
 
         private Task<GitCommandResponse> PerformSkipRebase(CancellationToken token)
         {
-            return this.SquashWrapper.Skip(this.lastCommitMessage, token);
+            return this.SquashWrapper.Skip(Settings.Default.PreviousCommitMessage, token);
         }
 
         private Task<string> PerformUpdateCommitMessage(CancellationToken token)

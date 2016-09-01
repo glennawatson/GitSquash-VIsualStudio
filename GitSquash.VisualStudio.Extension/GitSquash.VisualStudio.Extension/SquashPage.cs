@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel;
-
-namespace GitSquash.VisualStudio.Extension
+﻿namespace GitSquash.VisualStudio.Extension
 {
     using System;
+    using System.ComponentModel;
     using System.ComponentModel.Composition;
     using System.IO;
     using System.Reactive.Concurrency;
@@ -101,7 +99,13 @@ namespace GitSquash.VisualStudio.Extension
 
         private void SetViewModel()
         {
-            if (this.view?.ViewModel != null && this.view.ViewModel.IsBusy)
+            bool isBusy = false;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                isBusy = this.view?.ViewModel != null && this.view.ViewModel.IsBusy;
+            });
+
+            if (isBusy)
             {
                 return;
             }
@@ -117,7 +121,7 @@ namespace GitSquash.VisualStudio.Extension
 
             RxApp.MainThreadScheduler.Schedule(() =>
             {
-                if (this.view != null)
+                if (this.view != null && squashWrapper != null)
                 {
                     this.view.ViewModel = new SquashViewModel(squashWrapper, showBranches, showConflicts, showChanges);
                 }

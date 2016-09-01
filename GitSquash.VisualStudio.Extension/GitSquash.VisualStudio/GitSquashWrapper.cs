@@ -12,7 +12,7 @@ namespace GitSquash.VisualStudio
     using PropertyChanged;
 
     /// <summary>
-    /// A wrapper that performs the git squash operations.
+    /// A wrapper that performs the GIT squash operations.
     /// </summary>
     [ImplementPropertyChanged]
     public class GitSquashWrapper : IGitSquashWrapper
@@ -28,13 +28,61 @@ namespace GitSquash.VisualStudio
         /// Initializes a new instance of the <see cref="GitSquashWrapper" /> class.
         /// </summary>
         /// <param name="repoDirectory">The directory where the repository is located</param>
-        /// <param name="logger">The output logger to output git transactions.</param>
-        /// <param name="gitProcess">The git process to use.</param>
+        /// <param name="logger">The output logger to output GIT transactions.</param>
+        /// <param name="gitProcess">The GIT process to use.</param>
         public GitSquashWrapper(string repoDirectory, IOutputLogger logger, IGitProcessManager gitProcess = null)
         {
             this.repoDirectory = repoDirectory;
             this.gitProcess = gitProcess ?? new GitProcessManager(repoDirectory, logger);
             this.branchManager = new BranchManager(this.repoDirectory, null);
+        }
+
+
+        /// <summary>
+        /// Gets the writers names.
+        /// </summary>
+        /// <param name="rebaseWriter">The rebase name.</param>
+        /// <param name="commentWriter">The comment name.</param>
+        /// <returns>The commit.</returns>
+        public static bool GetWritersName(out string rebaseWriter, out string commentWriter)
+        {
+            rebaseWriter = null;
+            commentWriter = null;
+
+            try
+            {
+                var codeBaseUrl = new Uri(Assembly.GetExecutingAssembly().CodeBase);
+                var location = Uri.UnescapeDataString(codeBaseUrl.AbsolutePath);
+
+                if (File.Exists(location) == false)
+                {
+                    location = Uri.UnescapeDataString(Assembly.GetExecutingAssembly().Location);
+                }
+
+                if (string.IsNullOrWhiteSpace(location))
+                {
+                    return false;
+                }
+
+                string directoryName = Path.GetDirectoryName(location);
+
+                if (string.IsNullOrWhiteSpace(directoryName))
+                {
+                    return false;
+                }
+
+                rebaseWriter = Path.Combine(directoryName, "rebasewriter.exe").Replace(@"\", "/");
+                commentWriter = Path.Combine(directoryName, "commentWriter.exe").Replace(@"\", "/");
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (PathTooLongException)
+            {
+                return false;
+            }
         }
 
         /// <inheritdoc />
@@ -183,53 +231,6 @@ namespace GitSquash.VisualStudio
         public Task<IList<GitBranch>> GetBranches(CancellationToken token)
         {
             return this.branchManager.GetLocalAndRemoteBranches(token);
-        }
-
-        /// <summary>
-        /// Gets the writers names.
-        /// </summary>
-        /// <param name="rebaseWriter">The rebase name.</param>
-        /// <param name="commentWriter">The comment name.</param>
-        /// <returns>The commit.</returns>
-        public static bool GetWritersName(out string rebaseWriter, out string commentWriter)
-        {
-            rebaseWriter = null;
-            commentWriter = null;
-
-            try
-            {
-                var codeBaseUrl = new Uri(Assembly.GetExecutingAssembly().CodeBase);
-                var location = Uri.UnescapeDataString(codeBaseUrl.AbsolutePath);
-
-                if (File.Exists(location) == false)
-                {
-                    location = Uri.UnescapeDataString(Assembly.GetExecutingAssembly().Location);
-                }
-
-                if (string.IsNullOrWhiteSpace(location))
-                {
-                    return false;
-                }
-
-                string directoryName = Path.GetDirectoryName(location);
-
-                if (string.IsNullOrWhiteSpace(directoryName))
-                {
-                    return false;
-                }
-
-                rebaseWriter = Path.Combine(directoryName, "rebasewriter.exe");
-                commentWriter = Path.Combine(directoryName, "commentWriter.exe");
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (PathTooLongException)
-            {
-                return false;
-            }
         }
     }
 }

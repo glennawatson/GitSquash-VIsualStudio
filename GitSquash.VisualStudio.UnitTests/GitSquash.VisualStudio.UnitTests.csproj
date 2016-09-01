@@ -74,6 +74,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Git.VisualStudio\Git.VisualStudio.csproj">
+      <Project>{F204EA1B-817B-4227-B653-A3F485C22800}</Project>
+      <Name>Git.VisualStudio</Name>
+    </ProjectReference>
     <ProjectReference Include="..\GitSquash.VisualStudio.Extension\CommentWriter\CommentWriter.csproj">
       <Project>{8a822509-6b1d-4d04-b9e6-a5f80d8ffb8c}</Project>
       <Name>CommentWriter</Name>
@@ -86,6 +90,9 @@
       <Project>{efd6c183-797c-4f3b-8c6b-7ddd482352ad}</Project>
       <Name>RebaseWriter</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
