@@ -172,9 +172,11 @@
         /// <inheritdoc />
         public async Task<bool> IsWorkingDirectoryDirty(CancellationToken token)
         {
-            var result = await this.gitProcessManager.RunGit("diff-files --quiet", token);
+            var result = await this.gitProcessManager.RunGit("status --porcelain --ignore-submodules=dirty --untracked-files=all", token);
 
-            return result.ReturnCode == 1;
+            string[] lines = result.ProcessOutput.ToArrayOfLines();
+
+            return lines.Length > 0;
         }
 
         /// <inheritdoc />

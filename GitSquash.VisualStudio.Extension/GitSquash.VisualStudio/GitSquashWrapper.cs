@@ -149,7 +149,7 @@ namespace GitSquash.VisualStudio
         }
 
         /// <inheritdoc />
-        public async Task<GitCommandResponse> Continue(CancellationToken token)
+        public async Task<GitCommandResponse> Continue(string commitMessage, CancellationToken token)
         {
             string rewriterName;
             string commentWriterName;
@@ -158,7 +158,30 @@ namespace GitSquash.VisualStudio
                 return new GitCommandResponse(false, "Cannot get valid paths to GIT parameters", null, 0);
             }
 
-            return await this.gitProcess.RunGit($"-c core.quotepath=false -c \"core.editor=\'{commentWriterName}\'\"  rebase --continue", token);
+            string fileName = Path.GetTempFileName();
+            File.WriteAllText(fileName, commitMessage);
+
+            var environmentVariables = new Dictionary<string, string> { { "COMMENT_FILE_NAME", fileName } };
+
+            return await this.gitProcess.RunGit($"-c core.quotepath=false -c \"core.editor=\'{commentWriterName}\'\"  rebase --continue", token, environmentVariables);
+        }
+
+        /// <inheritdoc />
+        public async Task<GitCommandResponse> Skip(string commitMessage, CancellationToken token)
+        {
+            string rewriterName;
+            string commentWriterName;
+            if (GetWritersName(out rewriterName, out commentWriterName) == false)
+            {
+                return new GitCommandResponse(false, "Cannot get valid paths to GIT parameters", null, 0);
+            }
+
+            string fileName = Path.GetTempFileName();
+            File.WriteAllText(fileName, commitMessage);
+
+            var environmentVariables = new Dictionary<string, string> { { "COMMENT_FILE_NAME", fileName } };
+
+            return await this.gitProcess.RunGit($"-c core.quotepath=false -c \"core.editor=\'{commentWriterName}\'\"  rebase --skip", token, environmentVariables);
         }
 
         /// <inheritdoc />

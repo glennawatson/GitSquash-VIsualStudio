@@ -57,6 +57,11 @@
         ICommand FetchOrigin { get; }
 
         /// <summary>
+        /// Gets a command which will skip.
+        /// </summary>
+        ICommand Skip { get; }
+
+        /// <summary>
         /// Gets or sets the wrapper for the GIT squash operation.
         /// </summary>
         IGitSquashWrapper SquashWrapper { get; set; }

@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Reactive;
     using System.Reactive.Concurrency;
     using System.Reactive.Linq;
     using System.Text;
@@ -20,7 +21,7 @@
     /// </summary>
     public class SquashViewModel : ReactiveObject, ISquashViewModel
     {
-        private readonly ReactiveCommand<object> refresh;
+        private readonly ReactiveCommand<Unit> refresh;
 
         private readonly ReactiveCommand<string> updateCommitMessage;
 
@@ -35,6 +36,7 @@
         private readonly ReactiveCommand<GitCommandResponse> continueRebase;
         private readonly ReactiveCommand<GitCommandResponse> rebase;
         private readonly ReactiveCommand<GitCommandResponse> squash;
+        private readonly ReactiveCommand<GitCommandResponse> skip;
 
         private bool applyRebase = true;
 
@@ -65,6 +67,8 @@
         private IGitSquashWrapper squashWrapper;
 
         private CancellationTokenSource tokenSource;
+
+        private string lastCommitMessage;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SquashViewModel" /> class.
@@ -105,6 +109,7 @@
 
             var canSquashObservable = this.WhenAnyValue(x => x.CurrentBranch, x => x.SquashWrapper, x => x.SelectedCommit, x => x.CommitMessage, x => x.IsBusy, x => x.IsDirty)
                 .Select(x => x.Item1 != null && x.Item2 != null && x.Item3 != null && string.IsNullOrWhiteSpace(x.Item4) == false && x.Item5 == false && x.Item6 == false);
+
             var canRebase = this.WhenAnyValue(x => x.IsRebaseInProgress, x => x.IsDirty, x => x.IsBusy, x => x.SelectedRebaseBranch)
                 .Select(x => x.Item1 == false && x.Item2 == false && x.Item3 == false && x.Item4 != null);
             var canCancel = this.WhenAnyValue(x => x.IsBusy);
@@ -120,19 +125,25 @@
             this.abortRebase = this.GenerateGitCommand(canContinueRebase, this.PerformAbortRebase);
             this.pushForce = this.GenerateGitCommand(this.PerformPushForce);
             this.fetchOrigin = this.GenerateGitCommand(this.PerformFetchOrigin);
+            this.skip = this.GenerateGitCommand(canContinueRebase, this.PerformSkipRebase);
             var updateCommand = ReactiveCommand.CreateAsyncTask(async _ => await this.PerformUpdateCommitMessage(CancellationToken.None));
             updateCommand.Subscribe(x => this.CommitMessage = x);
             this.updateCommitMessage = updateCommand;
 
-            this.refresh = ReactiveCommand.Create();
-            this.refresh.Subscribe(_ => this.RefreshInternal());
+            this.refresh = ReactiveCommand.CreateAsyncTask(async _ => await this.RefreshInternal());
+
+            this.WhenAnyValue(x => x.GitCommandResponse).InvokeCommand(this.refresh);
 
             this.isBusy = new[]
             {
-                this.squash.IsExecuting, this.rebase.IsExecuting, this.continueRebase.IsExecuting,
-                this.cancelOperation.IsExecuting, this.abortRebase.IsExecuting,
-                this.fetchOrigin.IsExecuting, this.pushForce.IsExecuting, this.refresh.IsExecuting,
-                this.updateCommitMessage.IsExecuting
+                this.squash.IsExecuting,
+                this.rebase.IsExecuting,
+                this.continueRebase.IsExecuting,
+                this.cancelOperation.IsExecuting,
+                this.abortRebase.IsExecuting,
+                this.fetchOrigin.IsExecuting,
+                this.pushForce.IsExecuting, 
+                this.skip.IsExecuting
             }.Merge().ToProperty(this, x => x.IsBusy, out this.isBusy);
 
             this.WhenAnyValue(x => x.SelectedCommit).InvokeCommand(this.updateCommitMessage);
@@ -183,6 +194,9 @@
 
         /// <inheritdoc />
         public ICommand FetchOrigin => this.fetchOrigin;
+
+        /// <inheritdoc />
+        public ICommand Skip => this.skip;
 
         /// <inheritdoc />
         public bool IsConflicts
@@ -398,7 +412,7 @@
             }
         }
 
-        private async void RefreshInternal()
+        private async Task RefreshInternal()
         {
             string oldCommitText = this.CommitMessage;
             GitCommit oldCommit = this.SelectedCommit;
@@ -449,7 +463,6 @@
             command.Subscribe(x =>
             {
                 this.GitCommandResponse = x;
-                this.Refresh();
             });
 
             command.ThrownExceptions.ObserveOn(RxApp.MainThreadScheduler).Subscribe(ex => this.GitCommandResponse = new GitCommandResponse(false, ex.Message, null, 0));
@@ -476,7 +489,6 @@
             command.Subscribe(x =>
             {
                 this.GitCommandResponse = x;
-                this.Refresh();
             });
 
             command.ThrownExceptions.ObserveOn(RxApp.MainThreadScheduler).Subscribe(ex => this.GitCommandResponse = new GitCommandResponse(false, ex.Message, null, 0));
@@ -508,6 +520,8 @@
 
         private async Task<GitCommandResponse> PerformSquash(CancellationToken token)
         {
+            this.lastCommitMessage = this.CommitMessage;
+
             GitCommandResponse squashOutput = await this.SquashWrapper.Squash(token, this.CommitMessage, this.SelectedCommit);
 
             if (squashOutput.Success == false || token.IsCancellationRequested)
@@ -593,7 +607,12 @@
 
         private Task<GitCommandResponse> PerformContinueRebase(CancellationToken token)
         {
-            return this.SquashWrapper.Continue(token);
+            return this.SquashWrapper.Continue(this.lastCommitMessage, token);
+        }
+
+        private Task<GitCommandResponse> PerformSkipRebase(CancellationToken token)
+        {
+            return this.SquashWrapper.Skip(this.lastCommitMessage, token);
         }
 
         private Task<string> PerformUpdateCommitMessage(CancellationToken token)

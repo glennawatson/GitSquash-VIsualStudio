@@ -58,9 +58,18 @@
         /// <summary>
         /// Indicates we want to continue after a conflict was found.
         /// </summary>
+        /// <param name="commitMessage">The commit message to use.</param>
         /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
         /// <returns>Details about the operation.</returns>
-        Task<GitCommandResponse> Continue(CancellationToken token);
+        Task<GitCommandResponse> Continue(string commitMessage, CancellationToken token);
+
+        /// <summary>
+        /// Skips the specified commit in a rebase.
+        /// </summary>
+        /// <param name="commitMessage">The commit message to use.</param>
+        /// <param name="token">A cancellation token that allows for the operation to be exited early.</param>
+        /// <returns>Details about the operation.</returns>
+        Task<GitCommandResponse> Skip(string commitMessage, CancellationToken token);
 
         /// <summary>
         /// Performs a push to the GIT repository using a force.
