@@ -10,6 +10,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Input;
+
     using Git.VisualStudio;
 
     using Properties;
@@ -27,7 +28,7 @@
 
         private readonly ObservableAsPropertyHelper<bool?> isOperationSuccess;
 
-        private readonly ObservableAsPropertyHelper<bool> isBusy;
+        private ObservableAsPropertyHelper<bool> isBusy;
 
         private readonly ReactiveCommand<GitCommandResponse> fetchOrigin;
         private readonly ReactiveCommand<GitCommandResponse> pushForce;
@@ -116,6 +117,8 @@
             var canContinueRebase = this.WhenAnyValue(x => x.IsBusy, x => x.SquashWrapper, x => x.IsRebaseInProgress)
                 .Select(x => x.Item1 == false && x.Item2 != null && x.Item3);
 
+            var isNotBusyObservable = this.WhenAnyValue(x => x.IsBusy).Select(x => x == false);
+
             this.cancelOperation = ReactiveCommand.Create(canCancel);
             this.cancelOperation.Subscribe(_ => this.PerformCancelOperation());
 
@@ -123,28 +126,25 @@
             this.rebase = this.GenerateGitCommand(canRebase, this.PerformRebase);
             this.continueRebase = this.GenerateGitCommand(canContinueRebase, this.PerformContinueRebase);
             this.abortRebase = this.GenerateGitCommand(canContinueRebase, this.PerformAbortRebase);
-            this.pushForce = this.GenerateGitCommand(this.PerformPushForce);
-            this.fetchOrigin = this.GenerateGitCommand(this.PerformFetchOrigin);
+            this.pushForce = this.GenerateGitCommand(isNotBusyObservable, this.PerformPushForce);
+            this.fetchOrigin = this.GenerateGitCommand(isNotBusyObservable, this.PerformFetchOrigin);
             this.skip = this.GenerateGitCommand(canContinueRebase, this.PerformSkipRebase);
+
+            this.isBusy = new[]
+                   {
+                        this.squash.IsExecuting,
+                        this.rebase.IsExecuting,
+                        this.continueRebase.IsExecuting,
+                        this.cancelOperation.IsExecuting,
+                        this.abortRebase.IsExecuting,
+                        this.fetchOrigin.IsExecuting,
+                        this.pushForce.IsExecuting,
+                        this.skip.IsExecuting
+                    }.Merge().ToProperty(this, x => x.IsBusy, out this.isBusy);
+
             var updateCommand = ReactiveCommand.CreateAsyncTask(async _ => await this.PerformUpdateCommitMessage(CancellationToken.None));
             updateCommand.Subscribe(x => this.CommitMessage = x);
             this.updateCommitMessage = updateCommand;
-            var isNotBusyObservable = this.WhenAnyValue(x => x.IsBusy).Select(x => x == false);
-            this.refresh = ReactiveCommand.CreateAsyncTask(isNotBusyObservable, async _ => await this.RefreshInternal());
-
-            this.WhenAnyValue(x => x.GitCommandResponse).InvokeCommand(this.refresh);
-
-            this.isBusy = new[]
-            {
-                this.squash.IsExecuting,
-                this.rebase.IsExecuting,
-                this.continueRebase.IsExecuting,
-                this.cancelOperation.IsExecuting,
-                this.abortRebase.IsExecuting,
-                this.fetchOrigin.IsExecuting,
-                this.pushForce.IsExecuting, 
-                this.skip.IsExecuting
-            }.Merge().ToProperty(this, x => x.IsBusy, out this.isBusy);
 
             this.WhenAnyValue(x => x.SelectedCommit).InvokeCommand(this.updateCommitMessage);
             this.LogOptions = new GitLogOptionsViewModel { Value = Settings.Default.HistorySetting };
@@ -166,6 +166,10 @@
 
                 this.Refresh();
             });
+
+            this.refresh = ReactiveCommand.CreateAsyncTask(isNotBusyObservable, async _ => await this.RefreshInternal());
+
+            this.WhenAnyValue(x => x.IsBusy).Where(x => x == false).InvokeCommand(this.refresh);
         }
 
         /// <inheritdoc />
@@ -444,9 +448,10 @@
             }
         }
 
-        private ReactiveCommand<GitCommandResponse> GenerateGitCommand(IObservable<bool> canSquashObservable, Func<CancellationToken, Task<GitCommandResponse>> func)
+        private ReactiveCommand<GitCommandResponse> GenerateGitCommand(IObservable<bool> canExecuteObservable, Func<CancellationToken, Task<GitCommandResponse>> func)
         {
-            ReactiveCommand<GitCommandResponse> command = ReactiveCommand.CreateAsyncTask(canSquashObservable, async _ =>
+
+            Func<Task<GitCommandResponse>> executeFunc = () =>
             {
                 try
                 {
@@ -457,40 +462,17 @@
                 }
 
                 this.tokenSource = new CancellationTokenSource();
-                return await func(this.tokenSource.Token);
-            });
+
+                return func(this.tokenSource.Token);
+            };
+           
+            ReactiveCommand<GitCommandResponse> command = ReactiveCommand.CreateAsyncObservable(canExecuteObservable, _ => Observable.FromAsync(() => executeFunc()));
 
             command.Subscribe(x =>
             {
                 this.GitCommandResponse = x;
             });
-
-            command.ThrownExceptions.ObserveOn(RxApp.MainThreadScheduler).Subscribe(ex => this.GitCommandResponse = new GitCommandResponse(false, ex.Message, null, 0));
-
-            return command;
-        }
-
-        private ReactiveCommand<GitCommandResponse> GenerateGitCommand(Func<CancellationToken, Task<GitCommandResponse>> func)
-        {
-            ReactiveCommand<GitCommandResponse> command = ReactiveCommand.CreateAsyncTask(async _ =>
-            {
-                try
-                {
-                    this.tokenSource?.Cancel();
-                }
-                catch (ObjectDisposedException)
-                {
-                }
-
-                this.tokenSource = new CancellationTokenSource();
-                return await func(this.tokenSource.Token);
-            });
-
-            command.Subscribe(x =>
-            {
-                this.GitCommandResponse = x;
-            });
-
+           
             command.ThrownExceptions.ObserveOn(RxApp.MainThreadScheduler).Subscribe(ex => this.GitCommandResponse = new GitCommandResponse(false, ex.Message, null, 0));
 
             return command;

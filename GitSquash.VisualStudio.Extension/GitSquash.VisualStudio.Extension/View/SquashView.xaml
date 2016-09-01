@@ -68,11 +68,11 @@
                 <teamExplorer:TextLink Margin="0,0,6,0" Text="Abort" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding Path=AbortRebase}" Visibility="{Binding Path=IsRebaseInProgress, Converter={StaticResource TrueToVisibleConverter}}" />
                 <teamExplorer:TextLink Margin="0,0,6,0" Text="Skip (use with care)" Localization.Attributes="Text (Modifiable Readable Text)" Command="{Binding Path=Skip}" Visibility="{Binding Path=IsRebaseInProgress, Converter={StaticResource TrueToVisibleConverter}}" />
             </WrapPanel>
-            <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch" Visibility="{Binding OperationSuccess, Converter={StaticResource FalseToVisibleConverter}, FallbackValue=Visibility.Collapsed}">
+            <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch" Visibility="{Binding OperationSuccess, Converter={StaticResource FalseToVisibleConverter}, FallbackValue=Collapsed}">
                 <Rectangle Margin="2,0,4,2" Width="14" Height="14" Fill="{StaticResource WarningIconBrush}" />
                 <wpf:TextBlockControl Text="{Binding GitCommandResponse.OutputMessage}" Margin="2,0,4,2"  />
             </WrapPanel>
-            <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch" Visibility="{Binding OperationSuccess, Converter={StaticResource TrueToVisibleConverter}, FallbackValue=Visibility.Collapsed}">
+            <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Stretch" Visibility="{Binding OperationSuccess, Converter={StaticResource TrueToVisibleConverter}, FallbackValue=Collapsed}">
                 <Rectangle Margin="2,0,4,2" Width="14" Height="14" Fill="{StaticResource InformationIconBrush}" />
                 <wpf:TextBlockControl Text="{Binding GitCommandResponse.OutputMessage}" Margin="2,0,4,2"  />
             </WrapPanel>

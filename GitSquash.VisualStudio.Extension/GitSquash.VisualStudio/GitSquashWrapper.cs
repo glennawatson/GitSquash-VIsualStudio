@@ -59,11 +59,6 @@ namespace GitSquash.VisualStudio
         /// <inheritdoc />
         public async Task<GitCommandResponse> PushForce(CancellationToken token)
         {
-            if (await this.branchManager.GetRemoteBranch(await this.branchManager.GetCurrentCheckedOutBranch(token), token) != null)
-            {
-                return new GitCommandResponse(false, "The branch has not been pushed before.", null, 0);
-            }
-
             return await this.gitProcess.RunGit("push -f", token);
         }
 

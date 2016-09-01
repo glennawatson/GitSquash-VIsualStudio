@@ -1,4 +1,7 @@
-﻿namespace GitSquash.VisualStudio.Extension
+﻿using System.Collections.Generic;
+using System.ComponentModel;
+
+namespace GitSquash.VisualStudio.Extension
 {
     using System;
     using System.ComponentModel.Composition;
@@ -20,7 +23,7 @@
     /// relating to the squash action.
     /// </summary>
     [TeamExplorerPage(GitSquashPackage.SquashPageGuidString, Undockable = true)]
-    public class SquashPage : TeamExplorerBasePage 
+    public class SquashPage : TeamExplorerBasePage
     {
         private readonly ITeamExplorer teamExplorer;
         private readonly IGitExt gitService;
@@ -37,7 +40,7 @@
             this.teamExplorer = (ITeamExplorer)serviceProvider.GetService(typeof(ITeamExplorer));
 
             this.gitService = (IGitExt)serviceProvider.GetService(typeof(IGitExt));
-            this.gitService.PropertyChanged += (sender, e) => this.SetViewModel();
+            this.gitService.PropertyChanged += this.OnGitServiceActiveRepositoriesChanged;
         }
 
         /// <summary>
@@ -77,7 +80,10 @@
         /// <inheritdoc />
         public override void Refresh()
         {
-            RxApp.MainThreadScheduler.Schedule(() => { this.view.ViewModel.Refresh(); });
+            RxApp.MainThreadScheduler.Schedule(() =>
+            {
+                this.view?.ViewModel?.Refresh();
+            });
         }
 
         private static bool AreGitToolsInstalled()
@@ -88,8 +94,18 @@
             return File.Exists(pathToGit);
         }
 
+        private void OnGitServiceActiveRepositoriesChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
+        {
+            this.SetViewModel();
+        }
+
         private void SetViewModel()
         {
+            if (this.view?.ViewModel != null && this.view.ViewModel.IsBusy)
+            {
+                return;
+            }
+
             var showBranches = ReactiveCommand.Create();
             showBranches.Subscribe(_ => this.ShowPage(TeamExplorerPageIds.GitBranches));
             var showConflicts = ReactiveCommand.Create();

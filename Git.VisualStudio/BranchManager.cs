@@ -22,7 +22,7 @@
         /// <param name="logger">The logger to use.</param>
         public BranchManager(string repoPath, IOutputLogger logger)
         {
-            this.gitProcessManager = new GitProcessManager(repoPath, logger ?? new DebugOutputLog());
+            this.gitProcessManager = new GitProcessManager(repoPath, logger);
         }
 
         /// <inheritdoc />
@@ -187,7 +187,7 @@
                 return branch;
             }
 
-            var result = await this.gitProcessManager.RunGit(" -lvv", token);
+            var result = await this.gitProcessManager.RunGit("branch -lvv", token);
 
             if (result.Success == false)
             {
