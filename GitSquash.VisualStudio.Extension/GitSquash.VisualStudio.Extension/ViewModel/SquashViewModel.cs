@@ -129,8 +129,8 @@
             var updateCommand = ReactiveCommand.CreateAsyncTask(async _ => await this.PerformUpdateCommitMessage(CancellationToken.None));
             updateCommand.Subscribe(x => this.CommitMessage = x);
             this.updateCommitMessage = updateCommand;
-
-            this.refresh = ReactiveCommand.CreateAsyncTask(async _ => await this.RefreshInternal());
+            var isNotBusyObservable = this.WhenAnyValue(x => x.IsBusy).Select(x => x == false);
+            this.refresh = ReactiveCommand.CreateAsyncTask(isNotBusyObservable, async _ => await this.RefreshInternal());
 
             this.WhenAnyValue(x => x.GitCommandResponse).InvokeCommand(this.refresh);
 

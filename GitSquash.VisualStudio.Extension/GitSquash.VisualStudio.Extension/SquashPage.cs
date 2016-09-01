@@ -8,7 +8,6 @@
     using System.Windows.Threading;
     using Git.VisualStudio;
     using Microsoft.TeamFoundation.Controls;
-    using Microsoft.TeamFoundation.MVVM;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.TeamFoundation.Git.Extensibility;
     using ReactiveUI;
@@ -100,7 +99,13 @@
 
             IGitSquashWrapper squashWrapper = this.GetService<IGitSquashWrapper>();
 
-            RxApp.MainThreadScheduler.Schedule(() => { this.view.ViewModel = new SquashViewModel(squashWrapper, showBranches, showConflicts, showChanges); });
+            RxApp.MainThreadScheduler.Schedule(() =>
+            {
+                if (this.view != null)
+                {
+                    this.view.ViewModel = new SquashViewModel(squashWrapper, showBranches, showConflicts, showChanges);
+                }
+            });
         }
     }
 }
